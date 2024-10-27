@@ -65,6 +65,10 @@
 
 #include "pxr/usd/usdGeom/pointInstancer.h"
 
+#include "pxr/base/work/dispatcher.h"
+#include "pxr/base/work/loops.h"
+
+
 PXR_NAMESPACE_OPEN_SCOPE
 
 void ParseFilteredPairs(const pxr::UsdPrim& usdPrim, pxr::SdfPathVector& filteredPairs)
@@ -1537,22 +1541,31 @@ bool HasDynamicBodyParent(const UsdPrim& usdPrim, const RigidBodyMap& bodyMap, U
     return false;
 }
 
+
 template <typename DescType, typename UsdType> 
 void ProcessPhysicsPrims(const std::vector<UsdPrim>& physicsPrims, std::vector<DescType>& physicsDesc, 
     std::function<bool(const UsdType& prim, DescType* desc)> processDescFn)
 {
     if (!physicsPrims.empty())
     {
-        physicsDesc.resize(physicsPrims.size());
-        for (size_t i = 0; i < physicsPrims.size(); i++)
+        const size_t numPrims = physicsPrims.size();
+        physicsDesc.resize(numPrims);
+
+        const auto workLambda = [&](const size_t beginIdx, const size_t endIdx)
         {
-            const UsdType prim(physicsPrims[i]);
-            const bool ret = processDescFn(prim, &physicsDesc[i]);
-            if (!ret)
+            for (size_t i = beginIdx; i < endIdx; i++)
             {
-                physicsDesc[i].isValid = false;
+                const UsdType prim(physicsPrims[i]);
+                const bool ret = processDescFn(prim, &physicsDesc[i]);
+                if (!ret)
+                {
+                    physicsDesc[i].isValid = false;
+                }
             }
-        }
+        };
+
+        const size_t numPrimPerBatch = 10;
+        WorkParallelForN(numPrims, workLambda, numPrimPerBatch);
     }
 }
 
@@ -1614,72 +1627,73 @@ void CheckCollisionSimulationOwner(std::vector<UsdPrim>& collisionPrims, std::ve
     bool defaultSimulationOwner, const std::unordered_set<SdfPath, SdfPath::Hash>& rigidBodiesSet,
     const std::unordered_set<SdfPath, SdfPath::Hash>& simulationOwnersSet)
 {
-    for (size_t i = shapeDesc.size(); i--;)
-    {
-        bool ownerFound = false;
-        const UsdPhysicsShapeDesc& desc = shapeDesc[i];
-        if (desc.isValid)
-        {
-            if (desc.rigidBody != SdfPath() && rigidBodiesSet.find(desc.rigidBody) != rigidBodiesSet.end())
-            {        if (desc.rigidBody != SdfPath() && rigidBodiesSet.find(desc.rigidBody) != rigidBodiesSet.end())
-        {
-            ownerFound = true;
-        }
-        else
-        {
-            if (desc.rigidBody == SdfPath())
-            {
-                if (desc.simulationOwners.empty() && defaultSimulationOwner)
-                {                
-                    ownerFound = true;
-                }
-                else
-                {
-                    for (const SdfPath& owner : desc.simulationOwners)
-                    {
-                        if (simulationOwnersSet.find(owner) != simulationOwnersSet.end())
-                        {
-                            ownerFound = true;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
+	for (size_t i = shapeDesc.size(); i--;)
+	{
+		bool ownerFound = false;
+		const UsdPhysicsShapeDesc& desc = shapeDesc[i];
+		if (desc.isValid)
+		{
+			if (desc.rigidBody != SdfPath() && rigidBodiesSet.find(desc.rigidBody) != rigidBodiesSet.end())
+			{
+				if (desc.rigidBody != SdfPath() && rigidBodiesSet.find(desc.rigidBody) != rigidBodiesSet.end())
+				{
+					ownerFound = true;
+				}
+				else
+				{
+					if (desc.rigidBody == SdfPath())
+					{
+						if (desc.simulationOwners.empty() && defaultSimulationOwner)
+						{
+							ownerFound = true;
+						}
+						else
+						{
+							for (const SdfPath& owner : desc.simulationOwners)
+							{
+								if (simulationOwnersSet.find(owner) != simulationOwnersSet.end())
+								{
+									ownerFound = true;
+									break;
+								}
+							}
+						}
+					}
+				}
 
-                ownerFound = true;
-            }
-            else
-            {
-                if (desc.rigidBody == SdfPath())
-                {
-                    if (desc.simulationOwners.empty() && defaultSimulationOwner)
-                    {                
-                        ownerFound = true;
-                    }
-                    else
-                    {
-                        for (const SdfPath& owner : desc.simulationOwners)
-                        {
-                            if (simulationOwnersSet.find(owner) != simulationOwnersSet.end())
-                            {
-                                ownerFound = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
+				ownerFound = true;
+			}
+			else
+			{
+				if (desc.rigidBody == SdfPath())
+				{
+					if (desc.simulationOwners.empty() && defaultSimulationOwner)
+					{
+						ownerFound = true;
+					}
+					else
+					{
+						for (const SdfPath& owner : desc.simulationOwners)
+						{
+							if (simulationOwnersSet.find(owner) != simulationOwnersSet.end())
+							{
+								ownerFound = true;
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
 
-        if (!ownerFound)
-        {
-            shapeDesc[i] = shapeDesc.back();
-            shapeDesc.pop_back();
-            collisionPrims[i] = collisionPrims.back();
-            collisionPrims.pop_back();
-        }
-    }        
+		if (!ownerFound)
+		{
+			shapeDesc[i] = shapeDesc.back();
+			shapeDesc.pop_back();
+			collisionPrims[i] = collisionPrims.back();
+			collisionPrims.pop_back();
+		}
+	}
 }
 
 // Both bodies need to have simulation owners valid
@@ -1766,17 +1780,21 @@ SdfPath GetRigidBody(const UsdPrim& usdPrim, const RigidBodyMap& bodyMap)
     }
 }
 
-void GetCollisionShapeLocalTransfrom(UsdGeomXformCache& xfCache, const UsdPrim& collisionPrim, const UsdPrim& bodyPrim,
-                                            GfVec3f& localPosOut,
-                                            GfQuatf& localRotOut,
-                                            GfVec3f& localScaleOut)
+void GetCollisionShapeLocalTransfrom(const UsdPrim& collisionPrim, const UsdPrim& bodyPrim,
+    GfVec3f& localPosOut,
+    GfQuatf& localRotOut,
+    GfVec3f& localScaleOut)
 {
+    // body transform
+    const GfMatrix4d bodyLocalToWorldMatrix = UsdGeomXformable(bodyPrim).ComputeLocalToWorldTransform(UsdTimeCode::Default());
+
     // compute the shape rel transform to a body and store it.
     pxr::GfVec3f localPos(0.0f);
     if (collisionPrim != bodyPrim)
     {
-        bool resetXformStack;
-        const pxr::GfMatrix4d mat = xfCache.ComputeRelativeTransform(collisionPrim, bodyPrim, &resetXformStack);
+        const GfMatrix4d collisionLocalToWorldMatrix = UsdGeomXformable(collisionPrim).ComputeLocalToWorldTransform(UsdTimeCode::Default());
+        
+        const pxr::GfMatrix4d mat = collisionLocalToWorldMatrix * bodyLocalToWorldMatrix.GetInverse();
         GfTransform colLocalTransform(mat);
 
         localPos = pxr::GfVec3f(colLocalTransform.GetTranslation());
@@ -1793,7 +1811,7 @@ void GetCollisionShapeLocalTransfrom(UsdGeomXformCache& xfCache, const UsdPrim& 
 
     // now apply the body scale to localPos
     // physics does not support scales, so a rigid body scale has to be baked into the localPos
-    const pxr::GfTransform tr(xfCache.GetLocalToWorldTransform(bodyPrim));
+    const pxr::GfTransform tr(bodyLocalToWorldMatrix);
     const pxr::GfVec3d sc = tr.GetScale();
 
     for (int i = 0; i < 3; i++)
@@ -1804,11 +1822,11 @@ void GetCollisionShapeLocalTransfrom(UsdGeomXformCache& xfCache, const UsdPrim& 
     localPosOut = localPos;
 }
 
-void FinalizeCollision(UsdStageWeakPtr stage, UsdGeomXformCache& xfCache, const UsdPhysicsRigidBodyDesc* bodyDesc, UsdPhysicsShapeDesc* shapeDesc)
+void FinalizeCollision(UsdStageWeakPtr stage, const UsdPhysicsRigidBodyDesc* bodyDesc, UsdPhysicsShapeDesc* shapeDesc)
 {
     // get shape local pose
     const UsdPrim shapePrim = stage->GetPrimAtPath(shapeDesc->primPath);
-    GetCollisionShapeLocalTransfrom(xfCache, shapePrim, bodyDesc ? stage->GetPrimAtPath(bodyDesc->primPath) : stage->GetPseudoRoot(),
+    GetCollisionShapeLocalTransfrom(shapePrim, bodyDesc ? stage->GetPrimAtPath(bodyDesc->primPath) : stage->GetPseudoRoot(),
         shapeDesc->localPos, shapeDesc->localRot, shapeDesc->localScale);
 
     if (bodyDesc)
@@ -1817,46 +1835,50 @@ void FinalizeCollision(UsdStageWeakPtr stage, UsdGeomXformCache& xfCache, const 
     }
 }
 
-
-
 template <typename DescType> 
 void FinalizeCollisionDescs(UsdGeomXformCache& xfCache, const std::vector<UsdPrim>& physicsPrims, std::vector<DescType>& physicsDesc, 
-    RigidBodyMap& bodyMap, const std::map<SdfPath, std::unordered_set<SdfPath, SdfPath::Hash>>& collisionGroups)
+    const RigidBodyMap& bodyMap, const std::map<SdfPath, std::unordered_set<SdfPath, SdfPath::Hash>>& collisionGroups)
 {
-    for (size_t i = 0; i < physicsDesc.size(); i++)
+    const auto workLambda = [physicsPrims, &physicsDesc, bodyMap, collisionGroups](const size_t beginIdx, const size_t endIdx)
     {
-        DescType& colDesc = physicsDesc[i];
-        if (colDesc.isValid)
+        for (size_t i = beginIdx; i < endIdx; i++)        
         {
-            const UsdPrim prim = physicsPrims[i];
-            // get the body
-            SdfPath bodyPath = GetRigidBody(prim, bodyMap);
-            // body was found, add collision to the body
-            UsdPhysicsRigidBodyDesc* bodyDesc = nullptr;
-            if (bodyPath != SdfPath())
+            DescType& colDesc = physicsDesc[i];
+            if (colDesc.isValid)
             {
-                RigidBodyMap::iterator bodyIt = bodyMap.find(bodyPath);
-                if (bodyIt != bodyMap.end())
+                const UsdPrim prim = physicsPrims[i];
+                // get the body
+                SdfPath bodyPath = GetRigidBody(prim, bodyMap);
+                // body was found, add collision to the body
+                UsdPhysicsRigidBodyDesc* bodyDesc = nullptr;
+                if (bodyPath != SdfPath())
                 {
-                    bodyDesc = bodyIt->second;
-                    bodyDesc->collisions.push_back(colDesc.primPath);
+                    RigidBodyMap::const_iterator bodyIt = bodyMap.find(bodyPath);
+                    if (bodyIt != bodyMap.end())
+                    {
+                        bodyDesc = bodyIt->second;
+                        bodyDesc->collisions.push_back(colDesc.primPath);
+                    }
                 }
-            }
 
-            // check if collision belongs to collision groups
-            for (std::map<SdfPath, std::unordered_set<SdfPath, SdfPath::Hash>>::const_iterator it = collisionGroups.begin();
-             it != collisionGroups.end(); ++it)
-            {
-                if (it->second.find(colDesc.primPath) != it->second.end())
+                // check if collision belongs to collision groups
+                for (std::map<SdfPath, std::unordered_set<SdfPath, SdfPath::Hash>>::const_iterator it = collisionGroups.begin();
+                    it != collisionGroups.end(); ++it)
                 {
-                    colDesc.collisionGroups.push_back(it->first);
+                    if (it->second.find(colDesc.primPath) != it->second.end())
+                    {
+                        colDesc.collisionGroups.push_back(it->first);
+                    }
                 }
-            }
 
-            // finalize the collision, fill up the local transform etc
-            FinalizeCollision(prim.GetStage(), xfCache, bodyDesc, &colDesc);
+                // finalize the collision, fill up the local transform etc
+                FinalizeCollision(prim.GetStage(), bodyDesc, &colDesc);
+            }
         }
-    }
+    };
+
+    const size_t numPrimPerBatch = 10;
+    WorkParallelForN(physicsPrims.size(), workLambda, numPrimPerBatch);
 }
 
 struct ArticulationLink
@@ -2063,14 +2085,14 @@ void FinalizeArticulations(const pxr::UsdStageWeakPtr stage, ArticulationMap& ar
                 }
             }
         }
-    }
-
-    SdfPathVector articulationLinkOrderVector;
+    }    
 
     // first get user defined articulation roots
     // then search for the best root in the articulation hierarchy
-    for (ArticulationMap::const_reference& it : articulationMap)
-    {
+    const auto workLambda = [rigidBodyMap, jointMap, stage, bodyJointMap](ArticulationMap::const_reference& it)    
+    {        
+        SdfPathVector articulationLinkOrderVector;
+
         const SdfPath& articulationPath = it.first;
         SdfPath articulationBaseLinkPath = articulationPath;
 
@@ -2087,14 +2109,14 @@ void FinalizeArticulations(const pxr::UsdStageWeakPtr stage, ArticulationMap& ar
                     TF_DIAGNOSTIC_WARNING(
                         "ArticulationRootAPI definition on a static rigid body is not allowed, articulation root will be ignored. Prim: %s",
                         articulationPath.GetText());
-                    continue;
+                    return;
                 }
                 if (bodyIt->second->kinematicBody)
                 {
                     TF_DIAGNOSTIC_WARNING(
                         "ArticulationRootAPI definition on a kinematic rigid body is not allowed, articulation root will be ignored. Prim: %s",
                         articulationPath.GetText());
-                    continue;
+                    return;
                 }
                 it.second->rootPrims.push_back(bodyIt->first);
             }
@@ -2117,7 +2139,7 @@ void FinalizeArticulations(const pxr::UsdStageWeakPtr stage, ArticulationMap& ar
         // search through the hierarchy for the best root        
         const UsdPrim articulationPrim = stage->GetPrimAtPath(articulationBaseLinkPath);        
         if (!articulationPrim)
-            continue;        
+            return;
         UsdPrimRange range(articulationPrim, UsdTraverseInstanceProxies());
         std::vector<ArticulationLinkMap> articulationLinkMaps;
         articulationLinkOrderVector.clear();
@@ -2235,11 +2257,10 @@ void FinalizeArticulations(const pxr::UsdStageWeakPtr stage, ArticulationMap& ar
         {
             it.second->articulatedBodies.push_back(p);
         }
-    }
+    };
     
+    WorkParallelForEach(articulationMap.begin(), articulationMap.end(), workLambda);    
 }
-
-
 
 bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
         ParsePrimIteratorBase& primIterator,
@@ -2469,10 +2490,13 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
     std::vector<UsdPhysicsCollisionGroupDesc> collisionGroupsDescs;
     ProcessPhysicsPrims<UsdPhysicsCollisionGroupDesc, UsdPhysicsCollisionGroup>(collisionGroupPrims, collisionGroupsDescs, ParseCollisionGroupDesc);
     // Run groups merging
+    std::map<SdfPath, std::unordered_set<SdfPath, SdfPath::Hash>> collisionGroupSets;
     std::unordered_map<std::string, size_t> mergeGroupNameToIndex;
     for (size_t i = 0; i < collisionGroupsDescs.size(); i++)
     {
         const UsdPhysicsCollisionGroupDesc& desc = collisionGroupsDescs[i];
+
+        collisionGroupSets[desc.primPath];
 
         if (!desc.mergeGroupName.empty())
         {
@@ -2500,46 +2524,54 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
         }
     } 
 
-    // Populate the sets to check collisions, this needs to run in parallel!!!
-    std::map<SdfPath, std::unordered_set<SdfPath, SdfPath::Hash>> collisionGroupSets; 
-    for (size_t i = 0; i < collisionGroupsDescs.size(); i++)
+    // Populate the sets to check collisions
     {
-        const UsdPrim groupPrim = collisionGroupPrims[i];
-        UsdStageWeakPtr stage = groupPrim.GetStage();
-        const UsdPhysicsCollisionGroupDesc& desc = collisionGroupsDescs[i];
-        std::unordered_set<SdfPath, SdfPath::Hash>& hashSet = collisionGroupSets[desc.primPath];
+        const auto workLambda = [&](const size_t beginIdx, const size_t endIdx)
+        {
+            for (size_t i = beginIdx; i < endIdx; i++)
+            {
+                const UsdPrim groupPrim = collisionGroupPrims[i];
+                UsdStageWeakPtr stage = groupPrim.GetStage();
+                const UsdPhysicsCollisionGroupDesc& desc = collisionGroupsDescs[i];
 
-        if (desc.mergedGroups.empty())
-        {
-            const UsdPhysicsCollisionGroup cg(stage->GetPrimAtPath(desc.primPath));
-            if (cg)
-            {
-                const UsdCollectionAPI collectionAPI = cg.GetCollidersCollectionAPI();
-                UsdCollectionMembershipQuery query = collectionAPI.ComputeMembershipQuery();
-                const SdfPathSet includedPaths = UsdCollectionAPI::ComputeIncludedPaths(query, stage, UsdTraverseInstanceProxies());
-                for (const SdfPath& path : includedPaths)
+                std::unordered_set<SdfPath, SdfPath::Hash>& hashSet = collisionGroupSets[desc.primPath];
+
+                if (desc.mergedGroups.empty())
                 {
-                    hashSet.insert(path);
-                }
-            }
-        }
-        else
-        {
-            for (const SdfPath& groupPath : desc.mergedGroups)
-            {
-                const UsdPhysicsCollisionGroup cg(stage->GetPrimAtPath(groupPath));
-                if (cg)
-                {
-                    const UsdCollectionAPI collectionAPI = cg.GetCollidersCollectionAPI();
-                    UsdCollectionMembershipQuery query = collectionAPI.ComputeMembershipQuery();
-                    const SdfPathSet includedPaths = UsdCollectionAPI::ComputeIncludedPaths(query, stage, UsdTraverseInstanceProxies());
-                    for (const SdfPath& path : includedPaths)
+                    const UsdPhysicsCollisionGroup cg(stage->GetPrimAtPath(desc.primPath));
+                    if (cg)
                     {
-                        hashSet.insert(path);
+                        const UsdCollectionAPI collectionAPI = cg.GetCollidersCollectionAPI();
+                        UsdCollectionMembershipQuery query = collectionAPI.ComputeMembershipQuery();
+                        const SdfPathSet includedPaths = UsdCollectionAPI::ComputeIncludedPaths(query, stage, UsdTraverseInstanceProxies());
+                        for (const SdfPath& path : includedPaths)
+                        {
+                            hashSet.insert(path);
+                        }
+                    }
+                }
+                else
+                {
+                    for (const SdfPath& groupPath : desc.mergedGroups)
+                    {
+                        const UsdPhysicsCollisionGroup cg(stage->GetPrimAtPath(groupPath));
+                        if (cg)
+                        {
+                            const UsdCollectionAPI collectionAPI = cg.GetCollidersCollectionAPI();
+                            UsdCollectionMembershipQuery query = collectionAPI.ComputeMembershipQuery();
+                            const SdfPathSet includedPaths = UsdCollectionAPI::ComputeIncludedPaths(query, stage, UsdTraverseInstanceProxies());
+                            for (const SdfPath& path : includedPaths)
+                            {
+                                hashSet.insert(path);
+                            }
+                        }
                     }
                 }
             }
-        }
+        };
+
+        const size_t numPrimPerBatch = 10;
+        WorkParallelForN(collisionGroupsDescs.size(), workLambda, numPrimPerBatch);
     }
 
     // Rigid body physics material
@@ -2605,22 +2637,30 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
     std::vector<UsdPhysicsObjectType::Enum> collisionTypes;
     collisionTypes.resize(collisionPrims.size());
     std::vector<TfToken> customTokens;
-    for (size_t i = 0; i < collisionPrims.size(); i++)
-    {
-        if (customPhysicsTokens)
+    {       
+        const auto workLambda = [&](const size_t beginIdx, const size_t endIdx)
         {
-            TfToken shapeToken;
-            const UsdPhysicsObjectType::Enum shapeType = GetCollisionType(collisionPrims[i], &customPhysicsTokens->shapeTokens, &shapeToken);
-            collisionTypes[i] = shapeType;
-            if (shapeType == UsdPhysicsObjectType::eCustomShape)
+            for (size_t i = beginIdx; i < endIdx; i++)
             {
-                customTokens.push_back(shapeToken);
+                if (customPhysicsTokens)
+                {
+                    TfToken shapeToken;
+                    const UsdPhysicsObjectType::Enum shapeType = GetCollisionType(collisionPrims[i], &customPhysicsTokens->shapeTokens, &shapeToken);
+                    collisionTypes[i] = shapeType;
+                    if (shapeType == UsdPhysicsObjectType::eCustomShape)
+                    {
+                        customTokens.push_back(shapeToken);
+                    }
+                }
+                else
+                {
+                    collisionTypes[i] = GetCollisionType(collisionPrims[i], nullptr, nullptr);
+                }
             }
-        }
-        else
-        {
-            collisionTypes[i] = GetCollisionType(collisionPrims[i], nullptr, nullptr);
-        }
+        };
+        
+        const size_t numPrimPerBatch = 10;
+        WorkParallelForN(collisionPrims.size(), workLambda, numPrimPerBatch);
     }
 
     std::vector<UsdPrim> sphereShapePrims;
