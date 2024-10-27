@@ -40,6 +40,7 @@ TF_DECLARE_WEAK_AND_REF_PTRS(PcpPrimIndex_Graph);
 
 class ArResolver;
 class PcpCache;
+class PcpCacheChanges;
 class PcpPrimIndex;
 class PcpPrimIndexInputs;
 class PcpPrimIndexOutputs;
@@ -241,6 +242,14 @@ public:
     void ComputePrimChildNames(TfTokenVector *nameOrder,
                                PcpTokenSet *prohibitedNameSet) const;
 
+    /// Compute the prim child names for this prim when composed from only the
+    /// subtree starting at \p subtreeRootNode.
+    PCP_API
+    void ComputePrimChildNamesInSubtree(
+        const PcpNodeRef &subtreeRootNode,
+        TfTokenVector *nameOrder,
+        PcpTokenSet *prohibitedNameSet) const;
+
     /// Compute the prim property names for the given path. \p errors will
     /// contain any errors encountered while performing this operation.  The
     /// \p nameOrder vector must not contain any duplicate entries.
@@ -273,7 +282,7 @@ private:
     friend void Pcp_RescanForSpecs(
                     PcpPrimIndex*, bool usd,
                     bool updateHasSpecs,
-                    const std::vector<SdfLayerHandle>& layersToIgnore);
+                    const PcpCacheChanges *cacheChanges);
 
     // The node graph representing the compositional structure of this prim.
     PcpPrimIndex_GraphRefPtr _graph;
