@@ -35,8 +35,8 @@ PXR_NAMESPACE_OPEN_SCOPE
 /// \param[in] userData User data provided to the parsing function
 using UsdPhysicsReportFn =
 std::function<void(UsdPhysicsObjectType::Enum type, size_t numDesc,
-	const SdfPath* primPaths, const UsdPhysicsObjectDesc* objectDescs,
-	void* userData)>;
+    const SdfPath* primPaths, const UsdPhysicsObjectDesc* objectDescs,
+    void* userData)>;
 
 /// \struct CustomUsdPhysicsTokens
 ///
@@ -44,10 +44,10 @@ std::function<void(UsdPhysicsObjectType::Enum type, size_t numDesc,
 ///
 struct CustomUsdPhysicsTokens
 {
-	std::vector<TfToken> jointTokens;       ///< Custom joints to be reported by parsing
-	std::vector<TfToken> shapeTokens;       ///< Custom shapes to be reported by parsing
-	std::vector<TfToken> instancerTokens;   ///< Custom physics instancers to be 
-	///< skipped by parsing
+    std::vector<TfToken> jointTokens;       ///< Custom joints to be reported by parsing
+    std::vector<TfToken> shapeTokens;       ///< Custom shapes to be reported by parsing
+    std::vector<TfToken> instancerTokens;   ///< Custom physics instancers to be 
+    ///< skipped by parsing
 };
 
 /// Load USD physics from a given range
@@ -62,11 +62,11 @@ struct CustomUsdPhysicsTokens
 ///                       simulation owner should be parsed too.
 /// \return True if load was successful
 USDPHYSICS_API bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
-	ParsePrimIteratorBase& range,
-	UsdPhysicsReportFn reportFn,
-	void* userData,
-	const CustomUsdPhysicsTokens* customPhysicsTokens = nullptr,
-	const std::vector<SdfPath>* simulationOwners = nullptr);
+    ParsePrimIteratorBase& range,
+    UsdPhysicsReportFn reportFn,
+    void* userData,
+    const CustomUsdPhysicsTokens* customPhysicsTokens = nullptr,
+    const std::vector<SdfPath>* simulationOwners = nullptr);
 
 
 PXR_NAMESPACE_CLOSE_SCOPE
