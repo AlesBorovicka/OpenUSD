@@ -33,21 +33,19 @@ public:
     virtual ~ParsePrimIteratorBase() = default;
 
     /// Reset the iteration
-    virtual void reset() = 0;
+    virtual void Reset() = 0;
 
-    /// Check if iterator is at the end
-    /// \return True if at the end
-    virtual bool atEnd() const = 0;
+    /// Check if iterator is at the end; \return True if at the end
+    virtual bool AtEnd() const = 0;
 
-    /// Get current iterator
-    /// \return Current iterator
-    virtual UsdPrimRange::const_iterator getCurrent() = 0;
+    /// Get current iterator; \return Current iterator
+    virtual UsdPrimRange::const_iterator GetCurrent() = 0;
 
     /// Update iterator to next
-    virtual void next() = 0;
+    virtual void Next() = 0;
 
     /// Prune all children of the current iterator
-    virtual void pruneChildren() = 0;
+    virtual void PruneChildren() = 0;
 };
 
 /// \struct ParsePrimIteratorRange
@@ -57,122 +55,126 @@ public:
 class ParsePrimIteratorRange : public ParsePrimIteratorBase
 {
 public:
-    ParsePrimIteratorRange(UsdPrimRange range) : mRange(range)
+    ParsePrimIteratorRange(UsdPrimRange range) : _range(range)
     {
-        reset();
+        Reset();
     }
 
-    virtual void reset() override
+    void Reset() override
     {
-        mIter = mRange.begin();
+        _iter = _range.begin();
     }
 
-    virtual void pruneChildren() override
+    void PruneChildren() override
     {
-        if (!atEnd())
-            mIter.PruneChildren();
+        if (!AtEnd()) {
+            _iter.PruneChildren();
+        }
     }
 
-    virtual bool atEnd() const override
+    bool AtEnd() const override
     {
-        return mIter == mRange.end();
+        return _iter == _range.end();
     }
 
-    virtual UsdPrimRange::const_iterator getCurrent() override
+    UsdPrimRange::const_iterator GetCurrent() override
     {
-        return mIter;
+        return _iter;
     }
 
-    virtual void next() override
+    void Next() override
     {
-        if (mIter != mRange.end())
+        if (_iter != _range.end())
         {
-            mIter++;
+            _iter++;
         }
     }
 
 private:
-    UsdPrimRange mRange;
-    UsdPrimRange::const_iterator mIter;
+    UsdPrimRange _range;
+    UsdPrimRange::const_iterator _iter;
 };
 
 /// \struct ParsePrimIteratorMapRange
 ///
-/// Class for combined UsdPrimRange iterator that iterates over multiple hierarchies.
-/// This is required for processing newly added subtrees to be processed in one traverse.
+/// Class for combined UsdPrimRange iterator that iterates over multiple 
+/// hierarchies. This is required for processing newly added subtrees to be 
+/// processed in one traverse.
 ///
 class ParsePrimIteratorMapRange : public ParsePrimIteratorBase
 {
 public:
-    ParsePrimIteratorMapRange(const UsdPrimMap& primMap) : mPrimMap(primMap)
+    ParsePrimIteratorMapRange(const UsdPrimMap& primMap) : _primMap(primMap)
     {
-        reset();
+        Reset();
     }
 
-    virtual void reset() override
+    void Reset() override
     {
-        mAtEnd = true;
+        _atEnd = true;
 
-        mPrimMapIter = mPrimMap.begin();
+        _primMapIter = _primMap.begin();
 
-        if (mPrimMapIter != mPrimMap.end())
+        if (_primMapIter != _primMap.end())
         {
-            mRange = UsdPrimRange(mPrimMapIter->second, UsdTraverseInstanceProxies());
-            if (mRange.begin() != mRange.end())
+            _range = UsdPrimRange(_primMapIter->second, 
+                                  UsdTraverseInstanceProxies());
+            if (_range.begin() != _range.end())
             {
-                mIter = mRange.begin();
-                mAtEnd = false;
+                _iter = _range.begin();
+                _atEnd = false;
             }
         }
     }
 
-    virtual bool atEnd() const override
+    bool AtEnd() const override
     {
-        return mAtEnd;
+        return _atEnd;
     }
 
-    virtual void pruneChildren() override
+    void PruneChildren() override
     {
-        if (!atEnd())
-            mIter.PruneChildren();
+        if (!AtEnd()) {
+            _iter.PruneChildren();
+        }
     }
 
-    virtual UsdPrimRange::const_iterator getCurrent() override
+    UsdPrimRange::const_iterator GetCurrent() override
     {
-        return mIter;
+        return _iter;
     }
 
-    virtual void next() override
+    void Next() override
     {
-        if (mIter != mRange.end())
+        if (_iter != _range.end())
         {
-            mIter++;
+            _iter++;
 
-            if (mIter == mRange.end())
+            if (_iter == _range.end())
             {
-                mPrimMapIter++;
+                _primMapIter++;
 
-                if (mPrimMapIter == mPrimMap.end())
+                if (_primMapIter == _primMap.end())
                 {
-                    mAtEnd = true;
+                    _atEnd = true;
                 }
                 else
                 {
-                    mRange = UsdPrimRange(mPrimMapIter->second);
-                    mIter = mRange.begin();
+                    _range = UsdPrimRange(_primMapIter->second);
+                    _iter = _range.begin();
                 }
             }
         }
     }
 
 private:
-    bool mAtEnd;
+    bool _atEnd;
 
-    const UsdPrimMap& mPrimMap;
-    UsdPrimMap::const_iterator mPrimMapIter;
+    const UsdPrimMap& _primMap;
+    UsdPrimMap::const_iterator _primMapIter;
 
-    UsdPrimRange mRange;
-    UsdPrimRange::const_iterator mIter;
+    UsdPrimRange _range;
+    UsdPrimRange::const_iterator _iter;
 };
 
 using ExcludePathsSet = std::unordered_set<SdfPath, SdfPath::Hash>;
@@ -185,53 +187,55 @@ public:
     ///
     /// \param[in] range      UsdPrimRange to traverse
     /// \param[in] pathList   Paths to get pruned
-    ExcludeListPrimIteratorRange(UsdPrimRange range, const SdfPathVector& pathList)
-        : mRange(range)
+    ExcludeListPrimIteratorRange(UsdPrimRange range, 
+                                 const SdfPathVector& pathList)
+        : _range(range)
     {
         for (const SdfPath& path : pathList)
         {
-            mPathSet.insert(path);
+            _pathSet.insert(path);
         }
-        reset();
+        Reset();
     }
 
-    virtual void reset() override
+    void Reset() override
     {
-        mIter = mRange.begin();
+        _iter = _range.begin();
     }
 
-    virtual void pruneChildren() override
+    void PruneChildren() override
     {
-        mIter.PruneChildren();
+        _iter.PruneChildren();
     }
 
-    virtual bool atEnd() const override
+    bool AtEnd() const override
     {
-        return mIter == mRange.end();
+        return _iter == _range.end();
     }
 
-    virtual UsdPrimRange::const_iterator getCurrent() override
+    UsdPrimRange::const_iterator GetCurrent() override
     {
-        return mIter;
+        return _iter;
     }
 
-    virtual void next() override
+    void Next() override
     {
-        if (mIter != mRange.end())
+        if (_iter != _range.end())
         {
             bool validPrim = false;
             while (!validPrim)
             {
-                mIter++;
-                if (mIter != mRange.end())
+                _iter++;
+                if (_iter != _range.end())
                 {
-                    const UsdPrim& prim = *mIter;
+                    const UsdPrim& prim = *_iter;
                     if (prim)
                     {
-                        ExcludePathsSet::const_iterator fit = mPathSet.find(prim.GetPrimPath());
-                        if (fit != mPathSet.end())
+                        ExcludePathsSet::const_iterator fit = 
+                            _pathSet.find(prim.GetPrimPath());
+                        if (fit != _pathSet.end())
                         {
-                            mIter.PruneChildren();
+                            _iter.PruneChildren();
                         }
                         else
                         {
@@ -248,9 +252,9 @@ public:
     }
 
 private:
-    UsdPrimRange mRange;
-    UsdPrimRange::const_iterator mIter;
-    ExcludePathsSet mPathSet;
+    UsdPrimRange _range;
+    UsdPrimRange::const_iterator _iter;
+    ExcludePathsSet _pathSet;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE

@@ -23,8 +23,8 @@
 
 #include "pxr/usd/usdShade/materialBindingAPI.h"
 
-#include "parseUtils.h"
-#include "parseDesc.h"
+#include "pxr/usd/usdPhysics/parseUtils.h"
+#include "pxr/usd/usdPhysics/parseDesc.h"
 
 #include "pxr/usd/usdPhysics/scene.h"
 #include "pxr/usd/usdPhysics/collisionGroup.h"
@@ -57,7 +57,9 @@ PXR_NAMESPACE_OPEN_SCOPE
 void ParseFilteredPairs(const UsdPrim& usdPrim, SdfPathVector& filteredPairs)
 {
     UsdPhysicsFilteredPairsAPI filteredPairsAPI =
-        UsdPhysicsFilteredPairsAPI::Get(usdPrim.GetStage(), usdPrim.GetPrimPath());
+        UsdPhysicsFilteredPairsAPI::Get(usdPrim.GetStage(), 
+                                        usdPrim.GetPrimPath());
+
     if (filteredPairsAPI && filteredPairsAPI.GetFilteredPairsRel())
     {
         filteredPairsAPI.GetFilteredPairsRel().GetTargets(&filteredPairs);
@@ -69,13 +71,15 @@ bool ParseArticulationDesc(const UsdPhysicsArticulationRootAPI& articulationAPI,
 {
     if (articulationDesc && articulationAPI)
     {
-        ParseFilteredPairs(articulationAPI.GetPrim(), articulationDesc->filteredCollisions);
+        ParseFilteredPairs(articulationAPI.GetPrim(), 
+                           articulationDesc->filteredCollisions);
 
         articulationDesc->primPath = articulationAPI.GetPrim().GetPrimPath();
     }
     else
     {
-        TF_RUNTIME_ERROR("Provided UsdPhysicsArticulationRootAPI or UsdPhysicsArticulationDesc is not valid.");
+        TF_RUNTIME_ERROR("Provided UsdPhysicsArticulationRootAPI or "
+                         "UsdPhysicsArticulationDesc is not valid.");
         return false;
     }
     return true;
@@ -89,7 +93,8 @@ UsdPhysicsObjectType::Enum GetCollisionType(const UsdPrim& prim,
     // custom shape handling
     if (customTokens)
     {
-        const TfTokenVector& apis = prim.GetPrimTypeInfo().GetAppliedAPISchemas();
+        const TfTokenVector& apis = 
+            prim.GetPrimTypeInfo().GetAppliedAPISchemas();
 
         const TfToken& primType = prim.GetTypeName();
         for (size_t i = 0; i < customTokens->size(); i++)
@@ -99,8 +104,9 @@ UsdPhysicsObjectType::Enum GetCollisionType(const UsdPrim& prim,
                 if (apis[j] == (*customTokens)[i])
                 {
                     retVal = UsdPhysicsObjectType::eCustomShape;
-                    if (customeGeometryToken)
+                    if (customeGeometryToken) {
                         *customeGeometryToken = apis[j];
+                    }
                     break;
                 }
             }
@@ -111,15 +117,17 @@ UsdPhysicsObjectType::Enum GetCollisionType(const UsdPrim& prim,
             if (primType == (*customTokens)[i])
             {
                 retVal = UsdPhysicsObjectType::eCustomShape;
-                if (customeGeometryToken)
+                if (customeGeometryToken) {
                     *customeGeometryToken = primType;
+                }
                 break;
             }
         }
     }
 
-    if (retVal == UsdPhysicsObjectType::eCustomShape)
+    if (retVal == UsdPhysicsObjectType::eCustomShape) {
         return retVal;
+    }
 
     // geomgprim that belongs to that collision
     if (prim.IsA<UsdGeomGprim>())
@@ -168,11 +176,13 @@ const double tolerance = 1e-4;
 
 void CheckNonUniformScale(const GfVec3d& scale, const SdfPath& primPath)
 {
-    if (abs(scale[0] - scale[1]) > tolerance || abs(scale[0] - scale[2]) > tolerance ||
+    if (abs(scale[0] - scale[1]) > tolerance || 
+        abs(scale[0] - scale[2]) > tolerance ||
         abs(scale[2] - scale[1]) > tolerance)
     {
-        TF_DIAGNOSTIC_WARNING(
-            "Non-uniform scale may result in a non matching collision representation on prim : %s", primPath.GetText());
+        TF_DIAGNOSTIC_WARNING("Non-uniform scale may result in a non matching "
+                              "collision representation on prim : %s", 
+                              primPath.GetText());
     }
 }
 
@@ -182,10 +192,12 @@ SdfPath GetMaterialBinding(const UsdPrim& usdPrim)
     SdfPath materialPath = SdfPath();
 
     const static TfToken physicsPurpose("physics");
-    UsdShadeMaterialBindingAPI materialBindingAPI = UsdShadeMaterialBindingAPI(usdPrim);
+    UsdShadeMaterialBindingAPI materialBindingAPI = 
+        UsdShadeMaterialBindingAPI(usdPrim);
     if (materialBindingAPI)
     {
-        UsdShadeMaterial material = materialBindingAPI.ComputeBoundMaterial(physicsPurpose);
+        UsdShadeMaterial material = 
+            materialBindingAPI.ComputeBoundMaterial(physicsPurpose);
         if (material)
         {
             materialPath = material.GetPrim().GetPrimPath();
@@ -197,7 +209,8 @@ SdfPath GetMaterialBinding(const UsdPrim& usdPrim)
         std::vector<UsdPrim> prims;
         prims.push_back(usdPrim);
         std::vector<UsdShadeMaterial> materials =
-            UsdShadeMaterialBindingAPI::ComputeBoundMaterials(prims, physicsPurpose);
+            UsdShadeMaterialBindingAPI::ComputeBoundMaterials(prims, 
+                                                              physicsPurpose);
         if (!materials.empty() && materials[0])
         {
             materialPath = materials[0].GetPrim().GetPrimPath();
@@ -207,26 +220,30 @@ SdfPath GetMaterialBinding(const UsdPrim& usdPrim)
     return materialPath;
 }
 
-static void ParseColFilteredPairs(const UsdPrim& usdPrim, SdfPathVector& filteredPairs)
+static void ParseColFilteredPairs(const UsdPrim& usdPrim, 
+                                  SdfPathVector& filteredPairs)
 {
     UsdPhysicsFilteredPairsAPI filteredPairsAPI =
-        UsdPhysicsFilteredPairsAPI::Get(usdPrim.GetStage(), usdPrim.GetPrimPath());
+        UsdPhysicsFilteredPairsAPI::Get(usdPrim.GetStage(), 
+                                        usdPrim.GetPrimPath());
     if (filteredPairsAPI && filteredPairsAPI.GetFilteredPairsRel())
     {
         filteredPairsAPI.GetFilteredPairsRel().GetTargets(&filteredPairs);
     }
 }
 
-void FinalizeDesc(const UsdPhysicsCollisionAPI& colAPI, UsdPhysicsShapeDesc& desc)
+void FinalizeDesc(const UsdPhysicsCollisionAPI& colAPI, 
+                  UsdPhysicsShapeDesc& desc)
 {
-    // set the collider material as last
-    // set SdfPath() anyway, this would indicate default material should be used, 
-    // this is required for trimesh subset materials
-    // as not alway all faces are covered with a subset material
+    // set the collider material as last set SdfPath() anyway, this would 
+    // indicate default material should be used, this is required for trimesh 
+    // subset materials as not always all faces are covered with a subset 
+    // material
     const SdfPath& materialPath = GetMaterialBinding(colAPI.GetPrim());
     if (materialPath != SdfPath())
     {
-        const UsdPrim materialPrim = colAPI.GetPrim().GetStage()->GetPrimAtPath(materialPath);
+        const UsdPrim materialPrim = 
+            colAPI.GetPrim().GetStage()->GetPrimAtPath(materialPath);
         if (materialPrim && materialPrim.HasAPI<UsdPhysicsMaterialAPI>())
             desc.materials.push_back(materialPath);
         else
@@ -256,15 +273,17 @@ bool ParseSphereShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
         const UsdGeomSphere shape(usdPrim);
         if (shape)
         {
-            const GfTransform tr(shape.ComputeLocalToWorldTransform(UsdTimeCode::Default()));
+            const GfTransform tr(
+                shape.ComputeLocalToWorldTransform(UsdTimeCode::Default()));
 
             float radius = 1.0f;
 
             // Check scale, its part of the collision size
             {
                 const GfVec3d sc = tr.GetScale();
-                // as we dont support scale in physics and scale can be non uniform
-                // we pick the largest scale value as the sphere radius base
+                // as we dont support scale in physics and scale can be non
+                // uniform we pick the largest scale value as the sphere radius
+                // base
                 CheckNonUniformScale(sc, usdPrim.GetPrimPath());
                 radius = fmaxf(fmaxf(fabsf(float(sc[1])), fabsf(float(sc[0]))),
                     fabsf(float(sc[2])));
@@ -285,15 +304,15 @@ bool ParseSphereShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
         }
         else
         {
-            TF_RUNTIME_ERROR(
-                "Provided UsdPhysicsCollisionAPI is not applied to a UsdGeomSphere.");
+            TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI is not applied "
+                             "to a UsdGeomSphere.");
             return false;
         }
     }
     else
     {
-        TF_RUNTIME_ERROR(
-            "Provided UsdPhysicsCollisionAPI or UsdPhysicsSphereShapeDesc is not valid.");
+        TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI or "
+                         "UsdPhysicsSphereShapeDesc is not valid.");
         return false;
     }
     return true;
@@ -308,7 +327,8 @@ bool ParseCubeShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
         const UsdGeomCube shape(usdPrim);
         if (shape)
         {
-            const GfTransform tr(shape.ComputeLocalToWorldTransform(UsdTimeCode::Default()));
+            const GfTransform tr(
+                shape.ComputeLocalToWorldTransform(UsdTimeCode::Default()));
 
             GfVec3f halfExtents;
 
@@ -337,15 +357,15 @@ bool ParseCubeShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
         }
         else
         {
-            TF_RUNTIME_ERROR(
-                "Provided UsdPhysicsCollisionAPI is not applied to a UsdGeomCube.");
+            TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI is not applied "
+                             "to a UsdGeomCube.");
             return false;
         }
     }
     else
     {
-        TF_RUNTIME_ERROR(
-            "Provided UsdPhysicsCollisionAPI or UsdPhysicsCubeShapeDesc is not valid.");
+        TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI or "
+                         "UsdPhysicsCubeShapeDesc is not valid.");
         return false;
 
     }
@@ -361,7 +381,8 @@ bool ParseCylinderShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
         const UsdGeomCylinder shape(usdPrim);
         if (shape)
         {
-            const GfTransform tr(shape.ComputeLocalToWorldTransform(UsdTimeCode::Default()));
+            const GfTransform tr(
+                shape.ComputeLocalToWorldTransform(UsdTimeCode::Default()));
 
             float radius = 1.0f;
             float halfHeight = 1.0f;
@@ -416,15 +437,15 @@ bool ParseCylinderShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
         }
         else
         {
-            TF_RUNTIME_ERROR(
-                "Provided UsdPhysicsCollisionAPI is not applied to a UsdGeomCylinder.");
+            TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI is not applied "
+                             "to a UsdGeomCylinder.");
             return false;
         }
     }
     else
     {
-        TF_RUNTIME_ERROR(
-            "Provided UsdPhysicsCollisionAPI or UsdPhysicsCylinderShapeDesc is not valid.");
+        TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI or "
+                         "UsdPhysicsCylinderShapeDesc is not valid.");
         return false;
 
     }
@@ -440,7 +461,8 @@ bool ParseCapsuleShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
         const UsdGeomCapsule shape(usdPrim);
         if (shape)
         {
-            const GfTransform tr(shape.ComputeLocalToWorldTransform(UsdTimeCode::Default()));
+            const GfTransform tr(
+                shape.ComputeLocalToWorldTransform(UsdTimeCode::Default()));
 
             float radius = 1.0f;
             float halfHeight = 1.0f;
@@ -495,15 +517,15 @@ bool ParseCapsuleShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
         }
         else
         {
-            TF_RUNTIME_ERROR(
-                "Provided UsdPhysicsCollisionAPI is not applied to a UsdGeomCapsule.");
+            TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI is not applied "
+                             "to a UsdGeomCapsule.");
             return false;
         }
     }
     else
     {
-        TF_RUNTIME_ERROR(
-            "Provided UsdPhysicsCollisionAPI or UsdPhysicsCapsuleShapeDesc is not valid.");
+        TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI or "
+                         "UsdPhysicsCapsuleShapeDesc is not valid.");
         return false;
 
     }
@@ -519,7 +541,8 @@ bool ParseConeShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
         const UsdGeomCone shape(usdPrim);
         if (shape)
         {
-            const GfTransform tr(shape.ComputeLocalToWorldTransform(UsdTimeCode::Default()));
+            const GfTransform tr(
+                shape.ComputeLocalToWorldTransform(UsdTimeCode::Default()));
 
             float radius = 1.0f;
             float halfHeight = 1.0f;
@@ -574,15 +597,15 @@ bool ParseConeShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
         }
         else
         {
-            TF_RUNTIME_ERROR(
-                "Provided UsdPhysicsCollisionAPI is not applied to a UsdGeomCone.");
+            TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI is not applied "
+                             "to a UsdGeomCone.");
             return false;
         }
     }
     else
     {
-        TF_RUNTIME_ERROR(
-            "Provided UsdPhysicsCollisionAPI or UsdPhysicsConeShapeDesc is not valid.");
+        TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI or "
+                         "UsdPhysicsConeShapeDesc is not valid.");
         return false;
 
     }
@@ -598,7 +621,8 @@ bool ParseMeshShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
         const UsdGeomMesh shape(usdPrim);
         if (shape)
         {
-            const GfTransform tr(shape.ComputeLocalToWorldTransform(UsdTimeCode::Default()));
+            const GfTransform tr(
+                shape.ComputeLocalToWorldTransform(UsdTimeCode::Default()));
 
             const GfVec3d sc = tr.GetScale();
             meshShapeDesc->meshScale = GfVec3f(sc);
@@ -608,7 +632,8 @@ bool ParseMeshShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
             UsdPhysicsMeshCollisionAPI physicsColMeshAPI(usdPrim);
             if (physicsColMeshAPI)
             {
-                physicsColMeshAPI.GetApproximationAttr().Get(&meshShapeDesc->approximation);
+                physicsColMeshAPI.GetApproximationAttr().Get(
+                    &meshShapeDesc->approximation);
             }
 
             shape.GetDoubleSidedAttr().Get(&meshShapeDesc->doubleSided);
@@ -620,11 +645,14 @@ bool ParseMeshShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
             {
                 for (const UsdGeomSubset& subset : subsets)
                 {
-                    const SdfPath material = GetMaterialBinding(subset.GetPrim());
+                    const SdfPath material = GetMaterialBinding(
+                        subset.GetPrim());
                     if (material != SdfPath())
                     {
-                        const UsdPrim materialPrim = usdPrim.GetStage()->GetPrimAtPath(material);
-                        if (materialPrim && materialPrim.HasAPI<UsdPhysicsMaterialAPI>())
+                        const UsdPrim materialPrim = 
+                            usdPrim.GetStage()->GetPrimAtPath(material);
+                        if (materialPrim && 
+                            materialPrim.HasAPI<UsdPhysicsMaterialAPI>())
                         {
                             meshShapeDesc->materials.push_back(material);
                         }
@@ -638,15 +666,15 @@ bool ParseMeshShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
         }
         else
         {
-            TF_RUNTIME_ERROR(
-                "Provided UsdPhysicsCollisionAPI is not applied to a UsdGeomMesh.");
+            TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI is not applied "
+                             "to a UsdGeomMesh.");
             return false;
         }
     }
     else
     {
-        TF_RUNTIME_ERROR(
-            "Provided UsdPhysicsCollisionAPI or UsdPhysicsMeshShapeDesc is not valid.");
+        TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI or "
+                         "UsdPhysicsMeshShapeDesc is not valid.");
         return false;
 
     }
@@ -682,15 +710,15 @@ bool ParsePlaneShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
         }
         else
         {
-            TF_RUNTIME_ERROR(
-                "Provided UsdPhysicsCollisionAPI is not applied to a UsdGeomPlane.");
+            TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI is not applied "
+                             "to a UsdGeomPlane.");
             return false;
         }
     }
     else
     {
-        TF_RUNTIME_ERROR(
-            "Provided UsdPhysicsCollisionAPI or UsdPhysicsPlaneShapeDesc is not valid.");
+        TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI or "
+                         "UsdPhysicsPlaneShapeDesc is not valid.");
         return false;
 
     }
@@ -706,7 +734,8 @@ bool ParseSpherePointsShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
         const UsdGeomPoints shape(usdPrim);
         if (shape)
         {
-            const GfTransform tr(shape.ComputeLocalToWorldTransform(UsdTimeCode::Default()));
+            const GfTransform tr(
+                shape.ComputeLocalToWorldTransform(UsdTimeCode::Default()));
 
             VtArray<float> widths;
             VtArray<GfVec3f> positions;
@@ -720,11 +749,13 @@ bool ParseSpherePointsShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
                     {
                         const GfVec3d sc = tr.GetScale();
 
-                        // as we don't support scale in physics and scale can be non uniform
-                        // we pick the largest scale value as the sphere radius base
+                        // as we don't support scale in physics and scale can 
+                        // be non uniform we pick the largest scale value as the 
+                        // sphere radius base
                         CheckNonUniformScale(sc, usdPrim.GetPrimPath());
-                        sphereScale = fmaxf(fmaxf(fabsf(float(sc[1])), fabsf(float(sc[0]))),
-                            fabsf(float(sc[2])));
+                        sphereScale = fmaxf(fmaxf(fabsf(float(sc[1])), 
+                                                  fabsf(float(sc[0]))),
+                                            fabsf(float(sc[2])));
                     }
 
                     const size_t scount = positions.size();
@@ -733,13 +764,14 @@ bool ParseSpherePointsShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
                     {
                         spherePointsShapeDesc->spherePoints[i].radius =
                             sphereScale * widths[i] * 0.5f;
-                        spherePointsShapeDesc->spherePoints[i].center = positions[i];
+                        spherePointsShapeDesc->spherePoints[i].center = 
+                            positions[i];
                     }
                 }
                 else
                 {
-                    TF_DIAGNOSTIC_WARNING(
-                        "UsdGeomPoints width array size does not match position array size: %s",
+                    TF_DIAGNOSTIC_WARNING("UsdGeomPoints width array size does "
+                                          "not match position array size: %s",
                         usdPrim.GetPrimPath().GetText());
                     spherePointsShapeDesc->isValid = false;
                 }
@@ -752,21 +784,22 @@ bool ParseSpherePointsShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
                 spherePointsShapeDesc->isValid = false;
             }
 
-            spherePointsShapeDesc->primPath = collisionAPI.GetPrim().GetPrimPath();
+            spherePointsShapeDesc->primPath = 
+                collisionAPI.GetPrim().GetPrimPath();
 
             FinalizeDesc(collisionAPI, *spherePointsShapeDesc);
         }
         else
         {
-            TF_RUNTIME_ERROR(
-                "Provided UsdPhysicsCollisionAPI is not applied to a UsdGeomPoints.");
+            TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI is not applied "
+                             "to a UsdGeomPoints.");
             return false;
         }
     }
     else
     {
-        TF_RUNTIME_ERROR(
-            "Provided UsdPhysicsCollisionAPI or UsdPhysicsSpherePointsShapeDesc is not valid.");
+        TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI or "
+                         "UsdPhysicsSpherePointsShapeDesc is not valid.");
         return false;
     }
     return true;
@@ -784,8 +817,8 @@ bool ParseCustomShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
     }
     else
     {
-        TF_RUNTIME_ERROR(
-            "Provided UsdPhysicsCollisionAPI or UsdPhysicsCustomShapeDesc is not valid.");
+        TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI or "
+                         "UsdPhysicsCustomShapeDesc is not valid.");
         return false;
     }
     return true;
@@ -803,15 +836,17 @@ bool ParseCollisionGroupDesc(const UsdPhysicsCollisionGroup& collisionGroup,
             rel.GetTargets(&collisionGroupDesc->filteredGroups);
         }
 
-        collisionGroup.GetInvertFilteredGroupsAttr().Get(&collisionGroupDesc->invertFilteredGroups);
-        collisionGroup.GetMergeGroupNameAttr().Get(&collisionGroupDesc->mergeGroupName);
+        collisionGroup.GetInvertFilteredGroupsAttr().Get(
+            &collisionGroupDesc->invertFilteredGroups);
+        collisionGroup.GetMergeGroupNameAttr().Get(
+            &collisionGroupDesc->mergeGroupName);
 
         collisionGroupDesc->primPath = collisionGroup.GetPrim().GetPrimPath();
     }
     else
     {
-        TF_RUNTIME_ERROR(
-            "Provided UsdPhysicsCollisionGroup or UsdPhysicsCollisionGroupDesc is not valid.");
+        TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionGroup or "
+                         "UsdPhysicsCollisionGroupDesc is not valid.");
         return false;
     }
 
@@ -829,8 +864,8 @@ SdfPath GetRel(const UsdRelationship& ref, const UsdPrim& jointPrim)
     }
     if (targets.size() > 1)
     {
-        TF_DIAGNOSTIC_WARNING(
-            "Joint prim does have relationship to multiple bodies this is not supported, jointPrim %s",
+        TF_DIAGNOSTIC_WARNING("Joint prim does have relationship to multiple "
+                              "bodies this is not supported, jointPrim %s",
             jointPrim.GetPrimPath().GetText());
         return targets.at(0);
     }
@@ -846,8 +881,8 @@ bool CheckJointRel(const SdfPath& relPath, const UsdPrim& jointPrim)
     const UsdPrim relPrim = jointPrim.GetStage()->GetPrimAtPath(relPath);
     if (!relPrim)
     {
-        TF_RUNTIME_ERROR(
-            "Joint (%s) body relationship %s points to a non existent prim, joint will not be parsed.",
+        TF_RUNTIME_ERROR("Joint (%s) body relationship %s points to a non "
+                         "existent prim, joint will not be parsed.",
             jointPrim.GetPrimPath().GetText(),
             relPath.GetText());
         return false;
@@ -855,7 +890,8 @@ bool CheckJointRel(const SdfPath& relPath, const UsdPrim& jointPrim)
     return true;
 }
 
-UsdPrim GetBodyPrim(UsdStageWeakPtr stage, const SdfPath& relPath, UsdPrim& relPrim)
+UsdPrim GetBodyPrim(UsdStageWeakPtr stage, const SdfPath& relPath, 
+                    UsdPrim& relPrim)
 {
     UsdPrim parent = stage->GetPrimAtPath(relPath);
     relPrim = parent;
@@ -884,9 +920,11 @@ SdfPath GetLocalPose(UsdStageWeakPtr stage, const SdfPath& relPath, GfVec3f& t,
 
     // get scale and apply it into localPositions vectors
     const UsdGeomXformable xform(relPrim);
-    const GfMatrix4d worldRel = relPrim ? xform.ComputeLocalToWorldTransform(UsdTimeCode::Default()) : GfMatrix4d(1.0);
+    const GfMatrix4d worldRel = relPrim ? xform.ComputeLocalToWorldTransform(
+        UsdTimeCode::Default()) : GfMatrix4d(1.0);
 
-    // we need to apply scale to the localPose, the scale comes from the rigid body
+    // we need to apply scale to the localPose, the scale comes from the rigid 
+    // body
     GfVec3f sc;
     // if we had a rel not to rigid body, we need to recompute the localPose
     if (relPrim != body)
@@ -898,7 +936,8 @@ SdfPath GetLocalPose(UsdStageWeakPtr stage, const SdfPath& relPath, GfVec3f& t,
 
         GfMatrix4d bodyMat;
         if (body)
-            bodyMat = UsdGeomXformable(body).ComputeLocalToWorldTransform(UsdTimeCode::Default());
+            bodyMat = UsdGeomXformable(body).ComputeLocalToWorldTransform(
+                UsdTimeCode::Default());
         else
             bodyMat.SetIdentity();
 
@@ -929,7 +968,8 @@ SdfPath GetLocalPose(UsdStageWeakPtr stage, const SdfPath& relPath, GfVec3f& t,
     return body ? body.GetPrimPath() : SdfPath();
 }
 
-void FinalizeJoint(const UsdPhysicsJoint& jointPrim, UsdPhysicsJointDesc* jointDesc)
+void FinalizeJoint(const UsdPhysicsJoint& jointPrim, 
+                   UsdPhysicsJointDesc* jointDesc)
 {
     // joint bodies anchor point local transforms    
     GfVec3f t0(0.f);
@@ -963,7 +1003,8 @@ void FinalizeJoint(const UsdPhysicsJoint& jointPrim, UsdPhysicsJointDesc* jointD
     jointDesc->localPose1Orientation = q1;
 }
 
-bool ParseCommonJointDesc(const UsdPhysicsJoint& jointPrim, UsdPhysicsJointDesc* jointDesc)
+bool ParseCommonJointDesc(const UsdPhysicsJoint& jointPrim, 
+                          UsdPhysicsJointDesc* jointDesc)
 {
     const UsdPrim prim = jointPrim.GetPrim();
 
@@ -974,13 +1015,15 @@ bool ParseCommonJointDesc(const UsdPhysicsJoint& jointPrim, UsdPhysicsJointDesc*
     jointPrim.GetCollisionEnabledAttr().Get(&jointDesc->collisionEnabled);
     jointPrim.GetBreakForceAttr().Get(&jointDesc->breakForce);
     jointPrim.GetBreakTorqueAttr().Get(&jointDesc->breakTorque);
-    jointPrim.GetExcludeFromArticulationAttr().Get(&jointDesc->excludeFromArticulation);
+    jointPrim.GetExcludeFromArticulationAttr().Get(
+        &jointDesc->excludeFromArticulation);
 
     jointDesc->rel0 = GetRel(jointPrim.GetBody0Rel(), prim);
     jointDesc->rel1 = GetRel(jointPrim.GetBody1Rel(), prim);
 
     // check rel validity
-    if (!CheckJointRel(jointDesc->rel0, prim) || !CheckJointRel(jointDesc->rel1, prim))
+    if (!CheckJointRel(jointDesc->rel0, prim) || !CheckJointRel(
+        jointDesc->rel1, prim))
     {
         return false;
     }
@@ -1003,8 +1046,10 @@ bool ParseDistanceJointDesc(const UsdPhysicsDistanceJoint& distanceJoint,
 
         distanceJointDesc->maxEnabled = false;
         distanceJointDesc->minEnabled = false;
-        distanceJoint.GetMinDistanceAttr().Get(&distanceJointDesc->limit.minDist);
-        distanceJoint.GetMaxDistanceAttr().Get(&distanceJointDesc->limit.maxDist);
+        distanceJoint.GetMinDistanceAttr().Get(
+            &distanceJointDesc->limit.minDist);
+        distanceJoint.GetMaxDistanceAttr().Get(
+            &distanceJointDesc->limit.maxDist);
 
         if (distanceJointDesc->limit.minDist >= 0.0f)
         {
@@ -1019,15 +1064,16 @@ bool ParseDistanceJointDesc(const UsdPhysicsDistanceJoint& distanceJoint,
     }
     else
     {
-        TF_RUNTIME_ERROR(
-            "Provided UsdPhysicsDistanceJoint or UsdPhysicsDistanceJointDesc is not valid.");
+        TF_RUNTIME_ERROR("Provided UsdPhysicsDistanceJoint or "
+                         "UsdPhysicsDistanceJointDesc is not valid.");
         return false;
     }
 
     return true;
 }
 
-bool ParseDrive(const UsdPhysicsDriveAPI& drive, UsdPhysicsJointDrive* jointDrive)
+bool ParseDrive(const UsdPhysicsDriveAPI& drive, 
+                UsdPhysicsJointDrive* jointDrive)
 {
     if (drive && jointDrive)
     {
@@ -1067,35 +1113,40 @@ bool ParseFixedJointDesc(const UsdPhysicsFixedJoint& fixedJoint,
     }
     else
     {
-        TF_RUNTIME_ERROR(
-            "Provided UsdPhysicsFixedJoint or UsdPhysicsFixedJointDesc is not valid.");
+        TF_RUNTIME_ERROR("Provided UsdPhysicsFixedJoint or "
+                         "UsdPhysicsFixedJointDesc is not valid.");
         return false;
     }
 
     return true;
 }
 
-bool ParseLimit(const UsdPhysicsLimitAPI& limit, UsdPhysicsJointLimit* jointLimit)
+bool ParseLimit(const UsdPhysicsLimitAPI& limit, 
+                UsdPhysicsJointLimit* jointLimit)
 {
     if (limit && jointLimit)
     {
         limit.GetLowAttr().Get(&jointLimit->lower);
         limit.GetHighAttr().Get(&jointLimit->upper);
-        if ((isfinite(jointLimit->lower) && jointLimit->lower > -usdPhysicsSentinelLimit) ||
-            (isfinite(jointLimit->upper) && jointLimit->upper < usdPhysicsSentinelLimit))
-            jointLimit->enabled = true;
+        if ((isfinite(jointLimit->lower) && 
+            jointLimit->lower > -usdPhysicsSentinelLimit) ||
+            (isfinite(jointLimit->upper) && 
+            jointLimit->upper < usdPhysicsSentinelLimit)) {
+                jointLimit->enabled = true;
+        }
     }
     else
     {
-        TF_RUNTIME_ERROR(
-            "Provided UsdPhysicsLimitAPI or UsdPhysicsJointLimit is not valid.");
+        TF_RUNTIME_ERROR("Provided UsdPhysicsLimitAPI or "
+                         "UsdPhysicsJointLimit is not valid.");
         return false;
     }
 
     return true;
 }
 
-bool ParseD6JointDesc(const UsdPhysicsJoint& jointPrim, UsdPhysicsD6JointDesc* jointDesc)
+bool ParseD6JointDesc(const UsdPhysicsJoint& jointPrim, 
+                      UsdPhysicsD6JointDesc* jointDesc)
 {
     if (jointDesc && jointPrim)
     {
@@ -1106,12 +1157,17 @@ bool ParseD6JointDesc(const UsdPhysicsJoint& jointPrim, UsdPhysicsD6JointDesc* j
         }
 
         // D6 joint        
-        const std::array<std::pair<UsdPhysicsJointDOF::Enum, TfToken>, 7> axisVector =
+        const std::array<
+            std::pair<UsdPhysicsJointDOF::Enum, TfToken>, 7> axisVector =
         {
-            std::make_pair(UsdPhysicsJointDOF::eDistance, UsdPhysicsTokens->distance),
-            std::make_pair(UsdPhysicsJointDOF::eTransX, UsdPhysicsTokens->transX),
-            std::make_pair(UsdPhysicsJointDOF::eTransY, UsdPhysicsTokens->transY),
-            std::make_pair(UsdPhysicsJointDOF::eTransZ, UsdPhysicsTokens->transZ),
+            std::make_pair(UsdPhysicsJointDOF::eDistance, 
+                           UsdPhysicsTokens->distance),
+            std::make_pair(UsdPhysicsJointDOF::eTransX, 
+                           UsdPhysicsTokens->transX),
+            std::make_pair(UsdPhysicsJointDOF::eTransY, 
+                           UsdPhysicsTokens->transY),
+            std::make_pair(UsdPhysicsJointDOF::eTransZ, 
+                           UsdPhysicsTokens->transZ),
             std::make_pair(UsdPhysicsJointDOF::eRotX, UsdPhysicsTokens->rotX),
             std::make_pair(UsdPhysicsJointDOF::eRotY, UsdPhysicsTokens->rotY),
             std::make_pair(UsdPhysicsJointDOF::eRotZ, UsdPhysicsTokens->rotZ)
@@ -1121,32 +1177,35 @@ bool ParseD6JointDesc(const UsdPhysicsJoint& jointPrim, UsdPhysicsD6JointDesc* j
         {
             const TfToken& axisToken = axisVector[i].second;
 
-            const UsdPhysicsLimitAPI limitAPI = UsdPhysicsLimitAPI::Get(jointPrim.GetPrim(),
-                axisToken);
+            const UsdPhysicsLimitAPI limitAPI = 
+                UsdPhysicsLimitAPI::Get(jointPrim.GetPrim(), axisToken);
             if (limitAPI)
             {
                 UsdPhysicsJointLimit limit;
                 if (ParseLimit(limitAPI, &limit))
                 {
-                    jointDesc->jointLimits.push_back(std::make_pair(axisVector[i].first, limit));
+                    jointDesc->jointLimits.push_back(
+                        std::make_pair(axisVector[i].first, limit));
                 }
             }
 
-            const UsdPhysicsDriveAPI driveAPI = UsdPhysicsDriveAPI::Get(jointPrim.GetPrim(),
-                axisToken);
+            const UsdPhysicsDriveAPI driveAPI = 
+                UsdPhysicsDriveAPI::Get(jointPrim.GetPrim(), axisToken);
             if (driveAPI)
             {
                 UsdPhysicsJointDrive drive;
                 if (ParseDrive(driveAPI, &drive))
                 {
-                    jointDesc->jointDrives.push_back(std::make_pair(axisVector[i].first, drive));
+                    jointDesc->jointDrives.push_back(
+                        std::make_pair(axisVector[i].first, drive));
                 }
             }
         }
     }
     else
     {
-        TF_RUNTIME_ERROR("Provided UsdPhysicsJoint or UsdPhysicsJointDesc is not valid.");
+        TF_RUNTIME_ERROR("Provided UsdPhysicsJoint or UsdPhysicsJointDesc is "
+                         "not valid.");
         return false;
     }
 
@@ -1166,7 +1225,8 @@ bool ParseCustomJointDesc(const UsdPhysicsJoint& jointPrim,
     }
     else
     {
-        TF_RUNTIME_ERROR("Provided UsdPhysicsJoint or UsdPhysicsJointDesc is not valid.");
+        TF_RUNTIME_ERROR("Provided UsdPhysicsJoint or UsdPhysicsJointDesc is "
+                         "not valid.");
         return false;
     }
 
@@ -1178,8 +1238,10 @@ bool ParseRigidBodyMaterialDesc(const UsdPhysicsMaterialAPI& usdMaterial,
 {
     if (rbMaterialDesc && usdMaterial)
     {
-        usdMaterial.GetDynamicFrictionAttr().Get(&rbMaterialDesc->dynamicFriction);
-        usdMaterial.GetStaticFrictionAttr().Get(&rbMaterialDesc->staticFriction);
+        usdMaterial.GetDynamicFrictionAttr().Get(
+            &rbMaterialDesc->dynamicFriction);
+        usdMaterial.GetStaticFrictionAttr().Get(
+            &rbMaterialDesc->staticFriction);
 
         usdMaterial.GetRestitutionAttr().Get(&rbMaterialDesc->restitution);
 
@@ -1189,8 +1251,8 @@ bool ParseRigidBodyMaterialDesc(const UsdPhysicsMaterialAPI& usdMaterial,
     }
     else
     {
-        TF_RUNTIME_ERROR(
-            "Provided UsdPhysicsMaterialAPI or UsdPhysicsRigidBodyMaterialDesc is not valid.");
+        TF_RUNTIME_ERROR("Provided UsdPhysicsMaterialAPI or "
+                         "UsdPhysicsRigidBodyMaterialDesc is not valid.");
         return false;
 
     }
@@ -1200,7 +1262,8 @@ bool ParseRigidBodyMaterialDesc(const UsdPhysicsMaterialAPI& usdMaterial,
 bool ParseLinearDrive(UsdPhysicsJointDrive* dst, const UsdPrim& usdPrim)
 {
     dst->enabled = false;
-    const UsdPhysicsDriveAPI driveAPI = UsdPhysicsDriveAPI::Get(usdPrim, UsdPhysicsTokens->linear);
+    const UsdPhysicsDriveAPI driveAPI = 
+        UsdPhysicsDriveAPI::Get(usdPrim, UsdPhysicsTokens->linear);
     if (driveAPI)
     {
         return ParseDrive(driveAPI, dst);
@@ -1232,8 +1295,10 @@ bool ParsePrismaticJointDesc(const UsdPhysicsPrismaticJoint& prismaticJoint,
         prismaticJointDesc->axis = jointAxis;
 
         prismaticJointDesc->limit.enabled = false;
-        prismaticJoint.GetLowerLimitAttr().Get(&prismaticJointDesc->limit.lower);
-        prismaticJoint.GetUpperLimitAttr().Get(&prismaticJointDesc->limit.upper);
+        prismaticJoint.GetLowerLimitAttr().Get(
+            &prismaticJointDesc->limit.lower);
+        prismaticJoint.GetUpperLimitAttr().Get(
+            &prismaticJointDesc->limit.upper);
         if ((isfinite(prismaticJointDesc->limit.lower) &&
             (prismaticJointDesc->limit.lower > -usdPhysicsSentinelLimit)) ||
             (isfinite(prismaticJointDesc->limit.upper) &&
@@ -1242,15 +1307,16 @@ bool ParsePrismaticJointDesc(const UsdPhysicsPrismaticJoint& prismaticJoint,
             prismaticJointDesc->limit.enabled = true;
         }
 
-        if (!ParseLinearDrive(&prismaticJointDesc->drive, prismaticJoint.GetPrim()))
+        if (!ParseLinearDrive(&prismaticJointDesc->drive, 
+                              prismaticJoint.GetPrim()))
         {
             return false;
         }
     }
     else
     {
-        TF_RUNTIME_ERROR(
-            "Provided UsdPhysicsPrismaticJoint or UsdPhysicsPrismaticJointDesc is not valid.");
+        TF_RUNTIME_ERROR("Provided UsdPhysicsPrismaticJoint or "
+                         "UsdPhysicsPrismaticJointDesc is not valid.");
         return false;
     }
 
@@ -1297,21 +1363,24 @@ bool ParseRevoluteJointDesc(const UsdPhysicsRevoluteJoint& revoluteJoint,
 
         revoluteJoint.GetLowerLimitAttr().Get(&revoluteJointDesc->limit.lower);
         revoluteJoint.GetUpperLimitAttr().Get(&revoluteJointDesc->limit.upper);
-        if (isfinite(revoluteJointDesc->limit.lower) && isfinite(revoluteJointDesc->limit.upper)
+        if (isfinite(revoluteJointDesc->limit.lower) && 
+            isfinite(revoluteJointDesc->limit.upper)
             && revoluteJointDesc->limit.lower > -usdPhysicsSentinelLimit &&
             revoluteJointDesc->limit.upper < usdPhysicsSentinelLimit)
         {
             revoluteJointDesc->limit.enabled = true;
         }
 
-        if (!ParseAngularDrive(&revoluteJointDesc->drive, revoluteJoint.GetPrim()))
+        if (!ParseAngularDrive(&revoluteJointDesc->drive, 
+                               revoluteJoint.GetPrim()))
         {
             return false;
         }
     }
     else
     {
-        TF_RUNTIME_ERROR("Provided UsdPhysicsJoint or UsdPhysicsJointDesc is not valid.");
+        TF_RUNTIME_ERROR("Provided UsdPhysicsJoint or UsdPhysicsJointDesc is "
+                         "not valid.");
         return false;
     }
 
@@ -1353,10 +1422,12 @@ inline bool ScaleIsUniform(T scaleX, T scaleY, T scaleZ, T eps = T(1.0e-5))
 }
 
 
-void GetRigidBodyTransformation(const UsdPrim& bodyPrim, UsdPhysicsRigidBodyDesc& desc)
+void GetRigidBodyTransformation(const UsdPrim& bodyPrim, 
+                                UsdPhysicsRigidBodyDesc& desc)
 {
     const GfMatrix4d mat =
-        UsdGeomXformable(bodyPrim).ComputeLocalToWorldTransform(UsdTimeCode::Default());
+        UsdGeomXformable(bodyPrim).ComputeLocalToWorldTransform(
+            UsdTimeCode::Default());
     const GfTransform tr(mat);
     const GfVec3d pos = tr.GetTranslation();
     const GfQuatd rot = tr.GetRotation().GetQuat();
@@ -1366,7 +1437,8 @@ void GetRigidBodyTransformation(const UsdPrim& bodyPrim, UsdPhysicsRigidBodyDesc
         tr.GetScaleOrientation().GetQuaternion() != GfQuaternion::GetIdentity())
     {
         TF_DIAGNOSTIC_WARNING(
-            "ScaleOrientation is not supported for rigid bodies, prim path: %s.You may ignore this if the scale is close to uniform.",
+            "ScaleOrientation is not supported for rigid bodies, prim path: "
+            "%s.You may ignore this if the scale is close to uniform.",
             bodyPrim.GetPrimPath().GetText());
     }
 
@@ -1419,15 +1491,19 @@ bool ParseRigidBodyDesc(const UsdPhysicsRigidBodyAPI& rigidBodyAPI,
         GetRigidBodyTransformation(rigidBodyAPI.GetPrim(), *rigidBodyDesc);
 
         // filteredPairs
-        ParseFilteredPairs(rigidBodyAPI.GetPrim(), rigidBodyDesc->filteredCollisions);
+        ParseFilteredPairs(rigidBodyAPI.GetPrim(), 
+                           rigidBodyDesc->filteredCollisions);
 
         // velocity
         rigidBodyAPI.GetVelocityAttr().Get(&rigidBodyDesc->linearVelocity);
-        rigidBodyAPI.GetAngularVelocityAttr().Get(&rigidBodyDesc->angularVelocity);
+        rigidBodyAPI.GetAngularVelocityAttr().Get(
+            &rigidBodyDesc->angularVelocity);
 
         // rigid body flags
-        rigidBodyAPI.GetRigidBodyEnabledAttr().Get(&rigidBodyDesc->rigidBodyEnabled);
-        rigidBodyAPI.GetKinematicEnabledAttr().Get(&rigidBodyDesc->kinematicBody);
+        rigidBodyAPI.GetRigidBodyEnabledAttr().Get(
+            &rigidBodyDesc->rigidBodyEnabled);
+        rigidBodyAPI.GetKinematicEnabledAttr().Get(
+            &rigidBodyDesc->kinematicBody);
         rigidBodyAPI.GetStartsAsleepAttr().Get(&rigidBodyDesc->startsAsleep);
 
         // simulation owner
@@ -1445,8 +1521,8 @@ bool ParseRigidBodyDesc(const UsdPhysicsRigidBodyAPI& rigidBodyAPI,
     }
     else
     {
-        TF_RUNTIME_ERROR(
-            "Provided UsdPhysicsRigidBodyAPI or UsdPhysicsRigidBodyDesc is not valid.");
+        TF_RUNTIME_ERROR("Provided UsdPhysicsRigidBodyAPI or "
+                         "UsdPhysicsRigidBodyDesc is not valid.");
         return false;
     }
     return true;
@@ -1474,8 +1550,10 @@ bool ParseSphericalJointDesc(const UsdPhysicsSphericalJoint& sphericalJoint,
         sphericalJointDesc->axis = jointAxis;
 
         sphericalJointDesc->limit.enabled = false;
-        sphericalJoint.GetConeAngle0LimitAttr().Get(&sphericalJointDesc->limit.angle0);
-        sphericalJoint.GetConeAngle1LimitAttr().Get(&sphericalJointDesc->limit.angle1);
+        sphericalJoint.GetConeAngle0LimitAttr().Get(
+            &sphericalJointDesc->limit.angle0);
+        sphericalJoint.GetConeAngle1LimitAttr().Get(
+            &sphericalJointDesc->limit.angle1);
 
         if (isfinite(sphericalJointDesc->limit.angle0) &&
             isfinite(sphericalJointDesc->limit.angle1) &&
@@ -1487,15 +1565,16 @@ bool ParseSphericalJointDesc(const UsdPhysicsSphericalJoint& sphericalJoint,
     }
     else
     {
-        TF_RUNTIME_ERROR(
-            "Provided UsdPhysicsSphericalJoint or UsdPhysicsSphericalJointDesc is not valid.");
+        TF_RUNTIME_ERROR("Provided UsdPhysicsSphericalJoint or "
+                         "UsdPhysicsSphericalJointDesc is not valid.");
         return false;
     }
 
     return true;
 }
 
-bool ParseSceneDesc(const UsdPhysicsScene& scene, UsdPhysicsSceneDesc* sceneDesc)
+bool ParseSceneDesc(const UsdPhysicsScene& scene, 
+                    UsdPhysicsSceneDesc* sceneDesc)
 {
     if (sceneDesc && scene)
     {
@@ -1532,7 +1611,8 @@ bool ParseSceneDesc(const UsdPhysicsScene& scene, UsdPhysicsSceneDesc* sceneDesc
     }
     else
     {
-        TF_RUNTIME_ERROR("Provided UsdPhysicsScene or UsdPhysicsSceneDesc is not valid.");
+        TF_RUNTIME_ERROR("Provided UsdPhysicsScene or UsdPhysicsSceneDesc is "
+                         "not valid.");
         return false;
     }
     return true;
@@ -1565,7 +1645,8 @@ bool CheckNestedArticulationRoot(const UsdPrim& usdPrim,
 
 using RigidBodyMap = std::map<SdfPath, UsdPhysicsRigidBodyDesc*>;
 
-bool IsDynamicBody(const UsdPrim& usdPrim, const RigidBodyMap& bodyMap, bool& physicsAPIFound)
+bool IsDynamicBody(const UsdPrim& usdPrim, const RigidBodyMap& bodyMap, 
+                   bool& physicsAPIFound)
 {
     RigidBodyMap::const_iterator it = bodyMap.find(usdPrim.GetPrimPath());
     if (it != bodyMap.end())
@@ -1638,21 +1719,26 @@ void ProcessPhysicsPrims(const std::vector<UsdPrim>& physicsPrims,
 }
 
 template <typename DescType>
-void CallReportFn(UsdPhysicsObjectType::Enum descType,
-    const std::vector<UsdPrim>& physicsPrims, const std::vector<DescType>& physicsDesc,
-    UsdPhysicsReportFn reportFn, SdfPathVector& primPathsVector, void* userData)
+void CallReportFn(
+    UsdPhysicsObjectType::Enum descType, 
+    const std::vector<UsdPrim>& physicsPrims, 
+    const std::vector<DescType>& physicsDesc, UsdPhysicsReportFn reportFn, 
+    SdfPathVector& primPathsVector, void* userData)
 {
     primPathsVector.resize(physicsPrims.size());
     for (size_t i = 0; i < physicsPrims.size(); i++)
     {
         primPathsVector[i] = physicsPrims[i].GetPrimPath();
     }
-    reportFn(descType, primPathsVector.size(), primPathsVector.data(), physicsDesc.data(), userData);
+    reportFn(descType, primPathsVector.size(), primPathsVector.data(), 
+             physicsDesc.data(), userData);
 }
 
-void CheckRigidBodySimulationOwner(std::vector<UsdPrim>& rigidBodyPrims,
-    std::vector<UsdPhysicsRigidBodyDesc>& rigidBodyDescs,
-    bool defaultSimulationOwner, std::unordered_set<SdfPath, SdfPath::Hash>& reportedBodies,
+void CheckRigidBodySimulationOwner(
+    std::vector<UsdPrim>& rigidBodyPrims, 
+    std::vector<UsdPhysicsRigidBodyDesc>& rigidBodyDescs, 
+    bool defaultSimulationOwner, 
+    std::unordered_set<SdfPath, SdfPath::Hash>& reportedBodies, 
     const std::unordered_set<SdfPath, SdfPath::Hash>& simulationOwnersSet)
 {
     for (size_t i = rigidBodyDescs.size(); i--;)
@@ -1670,7 +1756,8 @@ void CheckRigidBodySimulationOwner(std::vector<UsdPrim>& rigidBodyPrims,
             {
                 for (const SdfPath& owner : desc.simulationOwners)
                 {
-                    if (simulationOwnersSet.find(owner) != simulationOwnersSet.end())
+                    if (simulationOwnersSet.find(owner) != 
+                        simulationOwnersSet.end())
                     {
                         reportedBodies.insert(desc.primPath);
                         ownerFound = true;
@@ -1717,7 +1804,8 @@ void CheckCollisionSimulationOwner(std::vector<UsdPrim>& collisionPrims,
                 {
                     if (desc.rigidBody == SdfPath())
                     {
-                        if (desc.simulationOwners.empty() && defaultSimulationOwner)
+                        if (desc.simulationOwners.empty() && 
+                            defaultSimulationOwner)
                         {
                             ownerFound = true;
                         }
@@ -1725,7 +1813,8 @@ void CheckCollisionSimulationOwner(std::vector<UsdPrim>& collisionPrims,
                         {
                             for (const SdfPath& owner : desc.simulationOwners)
                             {
-                                if (simulationOwnersSet.find(owner) != simulationOwnersSet.end())
+                                if (simulationOwnersSet.find(owner) != 
+                                    simulationOwnersSet.end())
                                 {
                                     ownerFound = true;
                                     break;
@@ -1749,7 +1838,8 @@ void CheckCollisionSimulationOwner(std::vector<UsdPrim>& collisionPrims,
                     {
                         for (const SdfPath& owner : desc.simulationOwners)
                         {
-                            if (simulationOwnersSet.find(owner) != simulationOwnersSet.end())
+                            if (simulationOwnersSet.find(owner) != 
+                                simulationOwnersSet.end())
                             {
                                 ownerFound = true;
                                 break;
@@ -1820,7 +1910,8 @@ void CheckArticulationSimulationOwner(std::vector<UsdPrim>& articulationPrims,
         {
             for (const SdfPath& body : desc.articulatedBodies)
             {
-                if (body != SdfPath() && rigidBodiesSet.find(body) == rigidBodiesSet.end())
+                if (body != SdfPath() && 
+                    rigidBodiesSet.find(body) == rigidBodiesSet.end())
                 {
                     ownersValid = false;
                     break;
@@ -1847,7 +1938,8 @@ SdfPath GetRigidBody(const UsdPrim& usdPrim, const RigidBodyMap& bodyMap)
     }
     else
     {
-        // collision does not have a dynamic body parent, it is considered a static collision        
+        // collision does not have a dynamic body parent, it is considered a 
+        // static collision        
         if (bodyPrim == UsdPrim())
         {
             return SdfPath();
@@ -1867,14 +1959,16 @@ void GetCollisionShapeLocalTransfrom(const UsdPrim& collisionPrim,
 {
     // body transform
     const GfMatrix4d bodyLocalToWorldMatrix =
-        UsdGeomXformable(bodyPrim).ComputeLocalToWorldTransform(UsdTimeCode::Default());
+        UsdGeomXformable(bodyPrim).ComputeLocalToWorldTransform(
+            UsdTimeCode::Default());
 
     // compute the shape rel transform to a body and store it.
     GfVec3f localPos(0.0f);
     if (collisionPrim != bodyPrim)
     {
         const GfMatrix4d collisionLocalToWorldMatrix =
-            UsdGeomXformable(collisionPrim).ComputeLocalToWorldTransform(UsdTimeCode::Default());
+            UsdGeomXformable(collisionPrim).ComputeLocalToWorldTransform(
+                UsdTimeCode::Default());
 
         const GfMatrix4d mat =
             collisionLocalToWorldMatrix * bodyLocalToWorldMatrix.GetInverse();
@@ -1906,12 +2000,16 @@ void GetCollisionShapeLocalTransfrom(const UsdPrim& collisionPrim,
     localPosOut = localPos;
 }
 
-void FinalizeCollision(UsdStageWeakPtr stage, const UsdPhysicsRigidBodyDesc* bodyDesc,
-    UsdPhysicsShapeDesc* shapeDesc)
+void FinalizeCollision(UsdStageWeakPtr stage, 
+                       const UsdPhysicsRigidBodyDesc* bodyDesc, 
+                       UsdPhysicsShapeDesc* shapeDesc)
 {
     // get shape local pose
     const UsdPrim shapePrim = stage->GetPrimAtPath(shapeDesc->primPath);
-    GetCollisionShapeLocalTransfrom(shapePrim, bodyDesc ? stage->GetPrimAtPath(bodyDesc->primPath) : stage->GetPseudoRoot(),
+    GetCollisionShapeLocalTransfrom(
+        shapePrim, 
+        bodyDesc ? 
+            stage->GetPrimAtPath(bodyDesc->primPath) : stage->GetPseudoRoot(),
         shapeDesc->localPos, shapeDesc->localRot, shapeDesc->localScale);
 
     if (bodyDesc)
@@ -1921,12 +2019,14 @@ void FinalizeCollision(UsdStageWeakPtr stage, const UsdPhysicsRigidBodyDesc* bod
 }
 
 template <typename DescType>
-void FinalizeCollisionDescs(UsdGeomXformCache& xfCache,
-    const std::vector<UsdPrim>& physicsPrims, std::vector<DescType>& physicsDesc,
-    const RigidBodyMap& bodyMap,
-    const std::map<SdfPath, std::unordered_set<SdfPath, SdfPath::Hash>>& collisionGroups)
+void FinalizeCollisionDescs(
+    UsdGeomXformCache& xfCache, const std::vector<UsdPrim>& physicsPrims, 
+    std::vector<DescType>& physicsDesc, const RigidBodyMap& bodyMap,
+    const std::map<SdfPath, std::unordered_set<SdfPath, 
+    SdfPath::Hash>>& collisionGroups)
 {
-    const auto workLambda = [physicsPrims, &physicsDesc, bodyMap, collisionGroups]
+    const auto workLambda = [physicsPrims, &physicsDesc, bodyMap, 
+        collisionGroups]
     (const size_t beginIdx, const size_t endIdx)
     {
         for (size_t i = beginIdx; i < endIdx; i++)
@@ -1941,7 +2041,8 @@ void FinalizeCollisionDescs(UsdGeomXformCache& xfCache,
                 UsdPhysicsRigidBodyDesc* bodyDesc = nullptr;
                 if (bodyPath != SdfPath())
                 {
-                    RigidBodyMap::const_iterator bodyIt = bodyMap.find(bodyPath);
+                    RigidBodyMap::const_iterator bodyIt = 
+                            bodyMap.find(bodyPath);
                     if (bodyIt != bodyMap.end())
                     {
                         bodyDesc = bodyIt->second;
@@ -1950,8 +2051,10 @@ void FinalizeCollisionDescs(UsdGeomXformCache& xfCache,
                 }
 
                 // check if collision belongs to collision groups
-                for (std::map<SdfPath,
-                    std::unordered_set<SdfPath, SdfPath::Hash>>::const_iterator it = collisionGroups.begin();
+                for (std::map<SdfPath, 
+                    std::unordered_set<SdfPath, 
+                        SdfPath::Hash>>::const_iterator it = 
+                            collisionGroups.begin();
                     it != collisionGroups.end(); ++it)
                 {
                     if (it->second.find(colDesc.primPath) != it->second.end())
@@ -1972,7 +2075,7 @@ void FinalizeCollisionDescs(UsdGeomXformCache& xfCache,
 
 struct ArticulationLink
 {
-    SdfPathVector   childs;
+    SdfPathVector   children;
     SdfPath         rootJoint;
     uint32_t        weight;
     uint32_t        index;
@@ -1986,7 +2089,8 @@ TfHashMap<SdfPath, std::vector<const UsdPhysicsJointDesc*>, SdfPath::Hash>;
 using JointMap = std::map<SdfPath, UsdPhysicsJointDesc*>;
 using ArticulationMap = std::map<SdfPath, UsdPhysicsArticulationDesc*>;
 
-bool IsInLinkMap(const SdfPath& path, const std::vector<ArticulationLinkMap>& linkMaps)
+bool IsInLinkMap(const SdfPath& path, 
+                 const std::vector<ArticulationLinkMap>& linkMaps)
 {
     for (size_t i = 0; i < linkMaps.size(); i++)
     {
@@ -2003,7 +2107,8 @@ void TraverseHierarchy(const UsdStageWeakPtr stage, const SdfPath& linkPath,
     uint32_t& index, SdfPathVector& linkOrderVector)
 {
     // check if we already parsed this link
-    ArticulationLinkMap::const_iterator artIt = articulationLinkMap.find(linkPath);
+    ArticulationLinkMap::const_iterator artIt = 
+        articulationLinkMap.find(linkPath);
     if (artIt != articulationLinkMap.end())
         return;
 
@@ -2021,8 +2126,10 @@ void TraverseHierarchy(const UsdStageWeakPtr stage, const SdfPath& linkPath,
         {
             const UsdPhysicsJointDesc* desc = joints[i];
             link.joints.push_back(desc->primPath);
-            if (desc->body0 == SdfPath() || (bodyJointMap.find(desc->body0) == bodyJointMap.end()) ||
-                desc->body1 == SdfPath() || (bodyJointMap.find(desc->body1) == bodyJointMap.end()))
+            if (desc->body0 == SdfPath() || 
+                (bodyJointMap.find(desc->body0) == bodyJointMap.end()) ||
+                desc->body1 == SdfPath() || 
+                (bodyJointMap.find(desc->body1) == bodyJointMap.end()))
             {
                 if (desc->excludeFromArticulation)
                 {
@@ -2034,48 +2141,55 @@ void TraverseHierarchy(const UsdStageWeakPtr stage, const SdfPath& linkPath,
                     link.rootJoint = desc->primPath;
                     link.hasFixedJoint = true;
                 }
-                link.childs.push_back(SdfPath());
+                link.children.push_back(SdfPath());
             }
             else
             {
                 if (desc->excludeFromArticulation)
                 {
-                    link.childs.push_back(desc->body0 == linkPath ? desc->body1 : desc->body0);
+                    link.children.push_back(desc->body0 == 
+                                          linkPath ? desc->body1 : desc->body0);
                     link.weight += 1000;
                 }
                 else
                 {
-                    link.childs.push_back(desc->body0 == linkPath ? desc->body1 : desc->body0);
+                    link.children.push_back(desc->body0 == 
+                                          linkPath ? desc->body1 : desc->body0);
                     link.weight += 100;
-                    TraverseHierarchy(stage, link.childs.back(), articulationLinkMap, bodyJointMap, index, linkOrderVector);
+                    TraverseHierarchy(stage, link.children.back(), 
+                                      articulationLinkMap, bodyJointMap, index, 
+                                      linkOrderVector);
                 }
             }
         }
     }
 }
 
-void TraverseChilds(const ArticulationLink& link, const ArticulationLinkMap& map,
-    uint32_t startIndex, uint32_t distance, int32_t* pathMatrix)
+void TraverseChilds(const ArticulationLink& link, 
+                    const ArticulationLinkMap& map, uint32_t startIndex, 
+                    uint32_t distance, int32_t* pathMatrix)
 {
     const size_t mapSize = map.size();
     const uint32_t currentIndex = link.index;
     pathMatrix[startIndex + currentIndex * mapSize] = distance;
 
-    for (size_t i = 0; i < link.childs.size(); i++)
+    for (size_t i = 0; i < link.children.size(); i++)
     {
-        ArticulationLinkMap::const_iterator it = map.find(link.childs[i]);
+        ArticulationLinkMap::const_iterator it = map.find(link.children[i]);
         if (it != map.end())
         {
             const uint32_t childIndex = it->second.index;
             if (pathMatrix[startIndex + childIndex * mapSize] < 0)
             {
-                TraverseChilds(it->second, map, startIndex, distance + 1, pathMatrix);
+                TraverseChilds(it->second, map, startIndex, distance + 1, 
+                               pathMatrix);
             }
         }
     }
 }
 
-SdfPath GetCenterOfGraph(const ArticulationLinkMap& map, const SdfPathVector& linkOrderVector)
+SdfPath GetCenterOfGraph(const ArticulationLinkMap& map, 
+                         const SdfPathVector& linkOrderVector)
 {
     const size_t size = map.size();
     int32_t* pathMatrix = new int32_t[size * size];
@@ -2109,26 +2223,25 @@ SdfPath GetCenterOfGraph(const ArticulationLinkMap& map, const SdfPathVector& li
             }
         }
 
-        // this needs to be deterministic, get the shortest path
-        // if there are more paths with same lenght, pick the one with more childs
-        // if there are more with same path and same amount of childs, pick the 
-        // one with lowest hash
-        // The lowest hash is not right, this is wrong, it has to be the first link 
-        // ordered by the traversal
+        // this needs to be deterministic, get the shortest path if there are
+        // more paths with same length, pick the one with more children if there
+        // are more with same path and same amount of children, pick the one
+        // with lowest hash The lowest hash is not right, this is wrong, it has
+        // to be the first link ordered by the traversal
         if (longestPath < shortestDistance)
         {
             shortestDistance = longestPath;
-            numChilds = ref.second.childs.size();
+            numChilds = ref.second.children.size();
             primpath = ref.first;
         }
         else if (longestPath == shortestDistance)
         {
-            if (numChilds < ref.second.childs.size())
+            if (numChilds < ref.second.children.size())
             {
-                numChilds = ref.second.childs.size();
+                numChilds = ref.second.children.size();
                 primpath = ref.first;
             }
-            else if (numChilds == ref.second.childs.size())
+            else if (numChilds == ref.second.children.size())
             {
                 for (const SdfPath& orderPath : linkOrderVector)
                 {
@@ -2166,8 +2279,10 @@ void FinalizeArticulations(const UsdStageWeakPtr stage,
             {
                 if (desc->body0 != SdfPath())
                 {
-                    RigidBodyMap::const_iterator fit = rigidBodyMap.find(desc->body0);
-                    if (fit != rigidBodyMap.end() && fit->second->rigidBodyEnabled &&
+                    RigidBodyMap::const_iterator fit = 
+                        rigidBodyMap.find(desc->body0);
+                    if (fit != rigidBodyMap.end() && 
+                        fit->second->rigidBodyEnabled &&
                         !fit->second->kinematicBody)
                     {
                         bodyJointMap[desc->body0].push_back(desc);
@@ -2175,8 +2290,10 @@ void FinalizeArticulations(const UsdStageWeakPtr stage,
                 }
                 if (desc->body1 != SdfPath())
                 {
-                    RigidBodyMap::const_iterator fit = rigidBodyMap.find(desc->body1);
-                    if (fit != rigidBodyMap.end() && fit->second->rigidBodyEnabled &&
+                    RigidBodyMap::const_iterator fit = 
+                        rigidBodyMap.find(desc->body1);
+                    if (fit != rigidBodyMap.end() && 
+                        fit->second->rigidBodyEnabled &&
                         !fit->second->kinematicBody)
                     {
                         bodyJointMap[desc->body1].push_back(desc);
@@ -2201,20 +2318,25 @@ void FinalizeArticulations(const UsdStageWeakPtr stage,
 
         // check if its a floating articulation
         {
-            RigidBodyMap::const_iterator bodyIt = rigidBodyMap.find(articulationPath);
+            RigidBodyMap::const_iterator bodyIt = 
+                    rigidBodyMap.find(articulationPath);
             if (bodyIt != rigidBodyMap.end())
             {
                 if (!bodyIt->second->rigidBodyEnabled)
                 {
-                    TF_DIAGNOSTIC_WARNING(
-                        "ArticulationRootAPI definition on a static rigid body is not allowed, articulation root will be ignored.Prim: %s",
+                    TF_DIAGNOSTIC_WARNING("ArticulationRootAPI definition on a "
+                                          "static rigid body is not allowed, "
+                                          "articulation root will be ignored. "
+                                          "Prim: %s",
                         articulationPath.GetText());
                     return;
                 }
                 if (bodyIt->second->kinematicBody)
                 {
-                    TF_DIAGNOSTIC_WARNING(
-                        "ArticulationRootAPI definition on a kinematic rigid body is not allowed, articulation root will be ignored.Prim: %s",
+                    TF_DIAGNOSTIC_WARNING("ArticulationRootAPI definition on a "
+                                          "kinematic rigid body is not "
+                                          "allowed, articulation root will be "
+                                          "ignored. Prim: %s",
                         articulationPath.GetText());
                     return;
                 }
@@ -2222,30 +2344,35 @@ void FinalizeArticulations(const UsdStageWeakPtr stage,
             }
             else
             {
-                JointMap::const_iterator jointIt = jointMap.find(articulationPath);
+                JointMap::const_iterator jointIt = 
+                        jointMap.find(articulationPath);
                 if (jointIt != jointMap.end())
                 {
                     const SdfPath& jointPath = jointIt->first;
                     const UsdPhysicsJointDesc* jointDesc = jointIt->second;
-                    if (jointDesc->body0 == SdfPath() || jointDesc->body1 == SdfPath())
+                    if (jointDesc->body0 == SdfPath() || 
+                        jointDesc->body1 == SdfPath())
                     {
                         it.second->rootPrims.push_back(jointPath);
-                        articulationBaseLinkPath = jointDesc->body0 == SdfPath() ?
-                            jointDesc->body1 : jointDesc->body0;
+                        articulationBaseLinkPath = 
+                            jointDesc->body0 == SdfPath() ? 
+                                jointDesc->body1 : jointDesc->body0;
                     }
                 }
             }
         }
 
         // search through the hierarchy for the best root        
-        const UsdPrim articulationPrim = stage->GetPrimAtPath(articulationBaseLinkPath);
+        const UsdPrim articulationPrim = 
+                stage->GetPrimAtPath(articulationBaseLinkPath);
         if (!articulationPrim)
             return;
         UsdPrimRange range(articulationPrim, UsdTraverseInstanceProxies());
         std::vector<ArticulationLinkMap> articulationLinkMaps;
         articulationLinkOrderVector.clear();
 
-        for (UsdPrimRange::const_iterator iter = range.begin(); iter != range.end(); ++iter)
+        for (UsdPrimRange::const_iterator iter = range.begin(); 
+            iter != range.end(); ++iter)
         {
             const UsdPrim& prim = *iter;
             if (!prim)
@@ -2292,7 +2419,8 @@ void FinalizeArticulations(const UsdStageWeakPtr stage,
                         const SdfPath optionalLinkPath =
                             (linkIt.second.rootJoint != SdfPath()) ?
                             linkIt.second.rootJoint : linkIt.first;
-                        for (const SdfPath& orderPath : articulationLinkOrderVector)
+                        for (const SdfPath& orderPath : 
+                                articulationLinkOrderVector)
                         {
                             if (orderPath == linkPath)
                             {
@@ -2311,11 +2439,12 @@ void FinalizeArticulations(const UsdStageWeakPtr stage,
                     }
                 }
 
-                // for floating articulation lets find the body with the shortest 
-                // paths (center of graph)
+                // for floating articulation lets find the body with the
+                // shortest paths (center of graph)
                 if (!hasFixedJoint)
                 {
-                    linkPath = GetCenterOfGraph(map, articulationLinkOrderVector);
+                    linkPath = GetCenterOfGraph(map, 
+                                                articulationLinkOrderVector);
                 }
 
                 if (linkPath != SdfPath())
@@ -2343,7 +2472,8 @@ void FinalizeArticulations(const UsdStageWeakPtr stage,
             const ArticulationLinkMap& map = articulationLinkMaps[i];
             for (ArticulationLinkMap::const_reference& linkIt : map)
             {
-                articulatedBodies.insert(linkIt.second.childs.begin(), linkIt.second.childs.end());
+                articulatedBodies.insert(linkIt.second.children.begin(), 
+                                         linkIt.second.children.end());
             }
         }
 
@@ -2362,7 +2492,8 @@ void FinalizeArticulations(const UsdStageWeakPtr stage,
         }
     };
 
-    WorkParallelForEach(articulationMap.begin(), articulationMap.end(), workLambda);
+    WorkParallelForEach(articulationMap.begin(), articulationMap.end(), 
+                        workLambda);
 }
 
 bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
@@ -2404,11 +2535,12 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
 
     // parse for scene first, get the descriptors, report all prims
     // the descriptors are not complete yet
-    primIterator.reset();
+    primIterator.Reset();
 
     static const TfToken gRigidBodyAPIToken("PhysicsRigidBodyAPI");
     static const TfToken gCollisionAPIToken("PhysicsCollisionAPI");
-    static const TfToken gArticulationRootAPIToken("PhysicsArticulationRootAPI");
+    static const TfToken gArticulationRootAPIToken(
+        "PhysicsArticulationRootAPI");
     static const TfToken gMaterialAPIToken("PhysicsMaterialAPI");
 
     bool defaultSimulationOwner = false;
@@ -2428,13 +2560,13 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
         }
     }
 
-    while (!primIterator.atEnd())
+    while (!primIterator.AtEnd())
     {
-        const UsdPrim& prim = *primIterator.getCurrent();
+        const UsdPrim& prim = *primIterator.GetCurrent();
         if (!prim)
         {
-            primIterator.pruneChildren();
-            primIterator.next();
+            primIterator.PruneChildren();
+            primIterator.Next();
             continue;
         }
 
@@ -2442,7 +2574,8 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
         const UsdPrimTypeInfo& typeInfo = prim.GetPrimTypeInfo();
 
         uint64_t apiFlags = 0;
-        const TfTokenVector& apis = prim.GetPrimTypeInfo().GetAppliedAPISchemas();
+        const TfTokenVector& apis = 
+            prim.GetPrimTypeInfo().GetAppliedAPISchemas();
         for (const TfToken& token : apis)
         {
             if (token == gArticulationRootAPIToken)
@@ -2465,17 +2598,21 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
 
         if (typeInfo.GetSchemaType().IsA<UsdGeomPointInstancer>())
         {
-            primIterator.pruneChildren(); // Skip the subtree for point instancers, 
-            //those have to be traversed per prototype
+            // Skip the subtree for point instancers, those have to be 
+            // traversed per prototype
+            primIterator.PruneChildren(); 
         }
-        else if (customPhysicsTokens && !customPhysicsTokens->instancerTokens.empty())
+        else if (customPhysicsTokens && 
+            !customPhysicsTokens->instancerTokens.empty())
         {
-            for (const TfToken& instToken : customPhysicsTokens->instancerTokens)
+            for (const TfToken& instToken : 
+                    customPhysicsTokens->instancerTokens)
             {
                 if (instToken == typeInfo.GetTypeName())
                 {
-                    primIterator.pruneChildren(); // Skip the subtree for custom 
+                    // Skip the subtree for custom 
                     // instancers, those have to be traversed per prototype
+                    primIterator.PruneChildren(); 
                     break;
                 }
             }
@@ -2521,7 +2658,8 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
                 if (customPhysicsTokens)
                 {
                     const TfToken& primType = typeInfo.GetTypeName();
-                    for (size_t i = 0; i < customPhysicsTokens->jointTokens.size(); i++)
+                    for (size_t i = 0; 
+                            i < customPhysicsTokens->jointTokens.size(); i++)
                     {
                         if (primType == customPhysicsTokens->jointTokens[i])
                         {
@@ -2566,7 +2704,7 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
             }
         }
 
-        primIterator.next();
+        primIterator.Next();
     }
 
     // process parsing
@@ -2589,15 +2727,16 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
             }
         }
     }
-    ProcessPhysicsPrims<UsdPhysicsSceneDesc, UsdPhysicsScene>(scenePrims, sceneDescs,
-        ParseSceneDesc);
+    ProcessPhysicsPrims<UsdPhysicsSceneDesc, UsdPhysicsScene>(
+        scenePrims, sceneDescs, ParseSceneDesc);
 
     // Collision Groups
     std::vector<UsdPhysicsCollisionGroupDesc> collisionGroupsDescs;
     ProcessPhysicsPrims<UsdPhysicsCollisionGroupDesc, UsdPhysicsCollisionGroup>
         (collisionGroupPrims, collisionGroupsDescs, ParseCollisionGroupDesc);
     // Run groups merging
-    std::map<SdfPath, std::unordered_set<SdfPath, SdfPath::Hash>> collisionGroupSets;
+    std::map<SdfPath, 
+        std::unordered_set<SdfPath, SdfPath::Hash>> collisionGroupSets;
     std::unordered_map<std::string, size_t> mergeGroupNameToIndex;
     for (size_t i = 0; i < collisionGroupsDescs.size(); i++)
     {
@@ -2611,7 +2750,8 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
                 mergeGroupNameToIndex.find(desc.mergeGroupName);
             if (fit != mergeGroupNameToIndex.end())
             {
-                UsdPhysicsCollisionGroupDesc& mergeDesc = collisionGroupsDescs[fit->second];
+                UsdPhysicsCollisionGroupDesc& mergeDesc = 
+                    collisionGroupsDescs[fit->second];
                 mergeDesc.mergedGroups.push_back(desc.primPath);
                 for (const SdfPath& sp : desc.filteredGroups)
                 {
@@ -2640,19 +2780,25 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
             {
                 const UsdPrim groupPrim = collisionGroupPrims[i];
                 UsdStageWeakPtr stage = groupPrim.GetStage();
-                const UsdPhysicsCollisionGroupDesc& desc = collisionGroupsDescs[i];
+                const UsdPhysicsCollisionGroupDesc& desc = 
+                        collisionGroupsDescs[i];
 
                 std::unordered_set<SdfPath, SdfPath::Hash>& hashSet =
                     collisionGroupSets[desc.primPath];
 
                 if (desc.mergedGroups.empty())
                 {
-                    const UsdPhysicsCollisionGroup cg(stage->GetPrimAtPath(desc.primPath));
+                    const UsdPhysicsCollisionGroup cg(
+                            stage->GetPrimAtPath(desc.primPath));
                     if (cg)
                     {
-                        const UsdCollectionAPI collectionAPI = cg.GetCollidersCollectionAPI();
-                        UsdCollectionMembershipQuery query = collectionAPI.ComputeMembershipQuery();
-                        const SdfPathSet includedPaths = UsdCollectionAPI::ComputeIncludedPaths(query, stage, UsdTraverseInstanceProxies());
+                        const UsdCollectionAPI collectionAPI = 
+                                cg.GetCollidersCollectionAPI();
+                        UsdCollectionMembershipQuery query = 
+                                collectionAPI.ComputeMembershipQuery();
+                        const SdfPathSet includedPaths = 
+                                UsdCollectionAPI::ComputeIncludedPaths(
+                                    query, stage, UsdTraverseInstanceProxies());
                         for (const SdfPath& path : includedPaths)
                         {
                             hashSet.insert(path);
@@ -2663,7 +2809,8 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
                 {
                     for (const SdfPath& groupPath : desc.mergedGroups)
                     {
-                        const UsdPhysicsCollisionGroup cg(stage->GetPrimAtPath(groupPath));
+                        const UsdPhysicsCollisionGroup cg(
+                                stage->GetPrimAtPath(groupPath));
                         if (cg)
                         {
                             const UsdCollectionAPI collectionAPI =
@@ -2671,7 +2818,9 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
                             UsdCollectionMembershipQuery query =
                                 collectionAPI.ComputeMembershipQuery();
                             const SdfPathSet includedPaths =
-                                UsdCollectionAPI::ComputeIncludedPaths(query, stage, UsdTraverseInstanceProxies());
+                                UsdCollectionAPI::ComputeIncludedPaths(
+                                        query, stage, 
+                                        UsdTraverseInstanceProxies());
                             for (const SdfPath& path : includedPaths)
                             {
                                 hashSet.insert(path);
@@ -2683,7 +2832,8 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
         };
 
         const size_t numPrimPerBatch = 10;
-        WorkParallelForN(collisionGroupsDescs.size(), workLambda, numPrimPerBatch);
+        WorkParallelForN(collisionGroupsDescs.size(), workLambda, 
+                         numPrimPerBatch);
     }
 
     // Rigid body physics material
@@ -2702,11 +2852,13 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
 
     std::vector<UsdPhysicsPrismaticJointDesc> prismaticJointDescs;
     ProcessPhysicsPrims<UsdPhysicsPrismaticJointDesc, UsdPhysicsPrismaticJoint>
-        (physicsPrismaticJointPrims, prismaticJointDescs, ParsePrismaticJointDesc);
+        (physicsPrismaticJointPrims, prismaticJointDescs, 
+         ParsePrismaticJointDesc);
 
     std::vector<UsdPhysicsSphericalJointDesc> sphericalJointDescs;
     ProcessPhysicsPrims<UsdPhysicsSphericalJointDesc, UsdPhysicsSphericalJoint>
-        (physicsSphericalJointPrims, sphericalJointDescs, ParseSphericalJointDesc);
+        (physicsSphericalJointPrims, sphericalJointDescs, 
+         ParseSphericalJointDesc);
 
     std::vector<UsdPhysicsFixedJointDesc> fixedJointDescs;
     ProcessPhysicsPrims<UsdPhysicsFixedJointDesc, UsdPhysicsFixedJoint>
@@ -2720,7 +2872,7 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
     ProcessPhysicsPrims<UsdPhysicsCustomJointDesc, UsdPhysicsJoint>
         (physicsCustomJointPrims, customJointDescs, ParseCustomJointDesc);
 
-    // A.B. contruct joint map revisit    
+    // A.B. construct joint map revisit    
     JointMap jointMap;
     for (UsdPhysicsD6JointDesc& desc : jointDescs)
     {
@@ -2766,7 +2918,9 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
                 {
                     TfToken shapeToken;
                     const UsdPhysicsObjectType::Enum shapeType =
-                        GetCollisionType(collisionPrims[i], &customPhysicsTokens->shapeTokens, &shapeToken);
+                        GetCollisionType(collisionPrims[i], 
+                                         &customPhysicsTokens->shapeTokens, 
+                                         &shapeToken);
                     collisionTypes[i] = shapeType;
                     if (shapeType == UsdPhysicsObjectType::eCustomShape)
                     {
@@ -2775,7 +2929,8 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
                 }
                 else
                 {
-                    collisionTypes[i] = GetCollisionType(collisionPrims[i], nullptr, nullptr);
+                    collisionTypes[i] = GetCollisionType(collisionPrims[i], 
+                                                         nullptr, nullptr);
                 }
             }
         };
@@ -2846,7 +3001,8 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
         case UsdPhysicsObjectType::eUndefined:
         default:
         {
-            TF_DIAGNOSTIC_WARNING("CollisionAPI applied to an unknown UsdGeomGPrim type, prim %s.",
+            TF_DIAGNOSTIC_WARNING("CollisionAPI applied to an unknown "
+                                  "UsdGeomGPrim type, prim %s.",
                 collisionPrims[i].GetPrimPath().GetString().c_str());
         }
         break;
@@ -2882,7 +3038,8 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
 
     std::vector<UsdPhysicsSpherePointsShapeDesc> spherePointsShapeDescs;
     ProcessPhysicsPrims<UsdPhysicsSpherePointsShapeDesc, UsdPhysicsCollisionAPI>
-        (spherePointsShapePrims, spherePointsShapeDescs, ParseSpherePointsShapeDesc);
+        (spherePointsShapePrims, spherePointsShapeDescs, 
+         ParseSpherePointsShapeDesc);
 
     std::vector<UsdPhysicsCustomShapeDesc> customShapeDescs;
     ProcessPhysicsPrims<UsdPhysicsCustomShapeDesc, UsdPhysicsCollisionAPI>
@@ -2929,9 +3086,11 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
             if (!hasResetXformStack)
             {
 
-                TF_DIAGNOSTIC_WARNING("Rigid Body of (%s) missing xformstack reset when child of rigid body (%s) in hierarchy."
-                    "Simulation of multiple RigidBodyAPI's in a hierarchy will cause unpredicted results."
-                    "Please fix the hierarchy or use XformStack reset.",
+                TF_DIAGNOSTIC_WARNING(
+                    "Rigid Body of (%s) missing xformstack reset when child of "
+                    "rigid body (%s) in hierarchy. Simulation of multiple "
+                    "RigidBodyAPI's in a hierarchy will cause unpredicted "
+                    "results. Please fix the hierarchy or use XformStack reset.",
                     bodyPrim.GetPrimPath().GetText(),
                     bodyParent.GetPrimPath().GetText());
 
@@ -2945,22 +3104,27 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
     // check for nested articulation roots, these are not supported    
     for (size_t i = articulationPrims.size(); i--;)
     {
-        if (CheckNestedArticulationRoot(articulationPrims[i], articulationPathsSet))
+        if (CheckNestedArticulationRoot(articulationPrims[i], 
+                                        articulationPathsSet))
         {
-            TF_DIAGNOSTIC_WARNING("Nested ArticulationRootAPI not supported, API ignored, prim %s.",
+            TF_DIAGNOSTIC_WARNING(
+                "Nested ArticulationRootAPI not supported, API ignored, "
+                "prim %s.", 
                 articulationPrims[i].GetPrimPath().GetString().c_str());
             articulationPrims[i] = articulationPrims.back();
             articulationPrims.pop_back();
         }
     }
     std::vector<UsdPhysicsArticulationDesc> articulationDescs;
-    ProcessPhysicsPrims<UsdPhysicsArticulationDesc, UsdPhysicsArticulationRootAPI>
+    ProcessPhysicsPrims<UsdPhysicsArticulationDesc, 
+        UsdPhysicsArticulationRootAPI>
         (articulationPrims, articulationDescs, ParseArticulationDesc);
 
     ArticulationMap articulationMap; // A.B. TODO probably not needed
     for (size_t i = articulationPrims.size(); i--;)
     {
-        articulationMap[articulationPrims[i].GetPrimPath()] = &articulationDescs[i];
+        articulationMap[articulationPrims[i].GetPrimPath()] = 
+            &articulationDescs[i];
     }
 
     // Finalize collisions
@@ -2968,23 +3132,32 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
         UsdGeomXformCache xfCache;
 
         FinalizeCollisionDescs<UsdPhysicsSphereShapeDesc>
-            (xfCache, sphereShapePrims, sphereShapeDescs, bodyMap, collisionGroupSets);
+            (xfCache, sphereShapePrims, sphereShapeDescs, bodyMap, 
+             collisionGroupSets);
         FinalizeCollisionDescs<UsdPhysicsCubeShapeDesc>
-            (xfCache, cubeShapePrims, cubeShapeDescs, bodyMap, collisionGroupSets);
+            (xfCache, cubeShapePrims, cubeShapeDescs, bodyMap, 
+             collisionGroupSets);
         FinalizeCollisionDescs<UsdPhysicsCapsuleShapeDesc>
-            (xfCache, capsuleShapePrims, capsuleShapeDescs, bodyMap, collisionGroupSets);
+            (xfCache, capsuleShapePrims, capsuleShapeDescs, bodyMap, 
+             collisionGroupSets);
         FinalizeCollisionDescs<UsdPhysicsCylinderShapeDesc>
-            (xfCache, cylinderShapePrims, cylinderShapeDescs, bodyMap, collisionGroupSets);
+            (xfCache, cylinderShapePrims, cylinderShapeDescs, bodyMap, 
+             collisionGroupSets);
         FinalizeCollisionDescs<UsdPhysicsConeShapeDesc>
-            (xfCache, coneShapePrims, coneShapeDescs, bodyMap, collisionGroupSets);
+            (xfCache, coneShapePrims, coneShapeDescs, bodyMap, 
+             collisionGroupSets);
         FinalizeCollisionDescs<UsdPhysicsPlaneShapeDesc>
-            (xfCache, planeShapePrims, planeShapeDescs, bodyMap, collisionGroupSets);
+            (xfCache, planeShapePrims, planeShapeDescs, bodyMap, 
+             collisionGroupSets);
         FinalizeCollisionDescs<UsdPhysicsMeshShapeDesc>
-            (xfCache, meshShapePrims, meshShapeDescs, bodyMap, collisionGroupSets);
+            (xfCache, meshShapePrims, meshShapeDescs, bodyMap, 
+             collisionGroupSets);
         FinalizeCollisionDescs<UsdPhysicsSpherePointsShapeDesc>
-            (xfCache, spherePointsShapePrims, spherePointsShapeDescs, bodyMap, collisionGroupSets);
+            (xfCache, spherePointsShapePrims, spherePointsShapeDescs, bodyMap, 
+             collisionGroupSets);
         FinalizeCollisionDescs<UsdPhysicsCustomShapeDesc>
-            (xfCache, customShapePrims, customShapeDescs, bodyMap, collisionGroupSets);
+            (xfCache, customShapePrims, customShapeDescs, bodyMap, 
+             collisionGroupSets);
     }
 
     // Finalize articulations
@@ -3004,7 +3177,8 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
         // check collisions
         // if collision belongs to a body that we care about include it
         // if collision does not belong to a body we care about its not included
-        // if collision does not have a body set, we check its own simulationOwners
+        // if collision does not have a body set, we check its own 
+        // simulationOwners
         CheckCollisionSimulationOwner(sphereShapePrims, sphereShapeDescs,
             defaultSimulationOwner, reportedBodies, simulationOwnersSet);
         CheckCollisionSimulationOwner(cubeShapePrims, cubeShapeDescs,
@@ -3019,7 +3193,8 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
             defaultSimulationOwner, reportedBodies, simulationOwnersSet);
         CheckCollisionSimulationOwner(meshShapePrims, meshShapeDescs,
             defaultSimulationOwner, reportedBodies, simulationOwnersSet);
-        CheckCollisionSimulationOwner(spherePointsShapePrims, spherePointsShapeDescs,
+        CheckCollisionSimulationOwner(spherePointsShapePrims, 
+                                      spherePointsShapeDescs,
             defaultSimulationOwner, reportedBodies, simulationOwnersSet);
         CheckCollisionSimulationOwner(customShapePrims, customShapeDescs,
             defaultSimulationOwner, reportedBodies, simulationOwnersSet);
@@ -3029,9 +3204,11 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
             defaultSimulationOwner, reportedBodies, simulationOwnersSet);
         CheckJointSimulationOwner(physicsRevoluteJointPrims, revoluteJointDescs,
             defaultSimulationOwner, reportedBodies, simulationOwnersSet);
-        CheckJointSimulationOwner(physicsPrismaticJointPrims, prismaticJointDescs,
+        CheckJointSimulationOwner(physicsPrismaticJointPrims, 
+                                  prismaticJointDescs,
             defaultSimulationOwner, reportedBodies, simulationOwnersSet);
-        CheckJointSimulationOwner(physicsSphericalJointPrims, sphericalJointDescs,
+        CheckJointSimulationOwner(physicsSphericalJointPrims, 
+                                  sphericalJointDescs,
             defaultSimulationOwner, reportedBodies, simulationOwnersSet);
         CheckJointSimulationOwner(physicsDistanceJointPrims, distanceJointDescs,
             defaultSimulationOwner, reportedBodies, simulationOwnersSet);
@@ -3067,23 +3244,30 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
 
     // 4. finish out and send out shapes
     {
-        CallReportFn(UsdPhysicsObjectType::eSphereShape, sphereShapePrims, sphereShapeDescs,
+        CallReportFn(UsdPhysicsObjectType::eSphereShape, sphereShapePrims, 
+                     sphereShapeDescs,
             reportFn, primPathsVector, userData);
-        CallReportFn(UsdPhysicsObjectType::eCubeShape, cubeShapePrims, cubeShapeDescs,
+        CallReportFn(UsdPhysicsObjectType::eCubeShape, cubeShapePrims, 
+                     cubeShapeDescs,
             reportFn, primPathsVector, userData);
         CallReportFn(UsdPhysicsObjectType::eCapsuleShape, capsuleShapePrims,
             capsuleShapeDescs, reportFn, primPathsVector, userData);
         CallReportFn(UsdPhysicsObjectType::eCylinderShape, cylinderShapePrims,
             cylinderShapeDescs, reportFn, primPathsVector, userData);
-        CallReportFn(UsdPhysicsObjectType::eConeShape, coneShapePrims, coneShapeDescs,
+        CallReportFn(UsdPhysicsObjectType::eConeShape, coneShapePrims, 
+                     coneShapeDescs,
             reportFn, primPathsVector, userData);
-        CallReportFn(UsdPhysicsObjectType::ePlaneShape, planeShapePrims, planeShapeDescs,
+        CallReportFn(UsdPhysicsObjectType::ePlaneShape, planeShapePrims, 
+                     planeShapeDescs,
             reportFn, primPathsVector, userData);
-        CallReportFn(UsdPhysicsObjectType::eMeshShape, meshShapePrims, meshShapeDescs,
+        CallReportFn(UsdPhysicsObjectType::eMeshShape, meshShapePrims, 
+                     meshShapeDescs,
             reportFn, primPathsVector, userData);
-        CallReportFn(UsdPhysicsObjectType::eSpherePointsShape, spherePointsShapePrims,
+        CallReportFn(UsdPhysicsObjectType::eSpherePointsShape, 
+                     spherePointsShapePrims,
             spherePointsShapeDescs, reportFn, primPathsVector, userData);
-        CallReportFn(UsdPhysicsObjectType::eCustomShape, customShapePrims, customShapeDescs,
+        CallReportFn(UsdPhysicsObjectType::eCustomShape, customShapePrims, 
+                     customShapeDescs,
             reportFn, primPathsVector, userData);
     }
 
@@ -3095,26 +3279,31 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
 
     // 6. send out bodies
     {
-        CallReportFn(UsdPhysicsObjectType::eRigidBody, rigidBodyPrims, rigidBodyDescs,
-            reportFn, primPathsVector, userData);
+        CallReportFn(UsdPhysicsObjectType::eRigidBody, rigidBodyPrims, 
+                     rigidBodyDescs, reportFn, primPathsVector, userData);
     }
 
     // 7. send out joints    
     {
         CallReportFn(UsdPhysicsObjectType::eFixedJoint, physicsFixedJointPrims,
             fixedJointDescs, reportFn, primPathsVector, userData);
-        CallReportFn(UsdPhysicsObjectType::eRevoluteJoint, physicsRevoluteJointPrims,
+        CallReportFn(UsdPhysicsObjectType::eRevoluteJoint, 
+                     physicsRevoluteJointPrims,
             revoluteJointDescs, reportFn, primPathsVector, userData);
-        CallReportFn(UsdPhysicsObjectType::ePrismaticJoint, physicsPrismaticJointPrims,
+        CallReportFn(UsdPhysicsObjectType::ePrismaticJoint, 
+                     physicsPrismaticJointPrims,
             prismaticJointDescs, reportFn, primPathsVector, userData);
-        CallReportFn(UsdPhysicsObjectType::eSphericalJoint, physicsSphericalJointPrims,
+        CallReportFn(UsdPhysicsObjectType::eSphericalJoint, 
+                     physicsSphericalJointPrims,
             sphericalJointDescs, reportFn, primPathsVector, userData);
-        CallReportFn(UsdPhysicsObjectType::eDistanceJoint, physicsDistanceJointPrims,
+        CallReportFn(UsdPhysicsObjectType::eDistanceJoint, 
+                     physicsDistanceJointPrims,
             distanceJointDescs, reportFn, primPathsVector, userData);
-        CallReportFn(UsdPhysicsObjectType::eD6Joint, physicsD6JointPrims, jointDescs,
-            reportFn, primPathsVector, userData);
-        CallReportFn(UsdPhysicsObjectType::eCustomJoint, physicsCustomJointPrims,
-            customJointDescs, reportFn, primPathsVector, userData);
+        CallReportFn(UsdPhysicsObjectType::eD6Joint, physicsD6JointPrims, 
+                     jointDescs, reportFn, primPathsVector, userData);
+        CallReportFn(UsdPhysicsObjectType::eCustomJoint, 
+                     physicsCustomJointPrims, customJointDescs, reportFn, 
+                     primPathsVector, userData);
     }
 
     return retVal;

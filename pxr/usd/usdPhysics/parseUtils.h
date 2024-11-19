@@ -31,7 +31,8 @@ PXR_NAMESPACE_OPEN_SCOPE
 /// \param[in] type     Object type
 /// \param[in] numDesc  Number of descriptors to be processed
 /// \param[in] primPaths    Array of prim paths that were parsed
-/// \param[in] objectDescs  Corresponding array of object descriptors of the reported type
+/// \param[in] objectDescs  Corresponding array of object descriptors of the 
+/// reported type
 /// \param[in] userData User data provided to the parsing function
 using UsdPhysicsReportFn =
 std::function<void(UsdPhysicsObjectType::Enum type, size_t numDesc,
@@ -44,10 +45,12 @@ std::function<void(UsdPhysicsObjectType::Enum type, size_t numDesc,
 ///
 struct CustomUsdPhysicsTokens
 {
-    std::vector<TfToken> jointTokens;       ///< Custom joints to be reported by parsing
-    std::vector<TfToken> shapeTokens;       ///< Custom shapes to be reported by parsing
-    std::vector<TfToken> instancerTokens;   ///< Custom physics instancers to be 
-    ///< skipped by parsing
+    /// Custom joints to be reported by parsing
+    std::vector<TfToken> jointTokens;
+    /// Custom shapes to be reported by parsing
+    std::vector<TfToken> shapeTokens;
+    /// Custom physics instancers to be reported by parsing
+    std::vector<TfToken> instancerTokens;
 };
 
 /// Load USD physics from a given range
