@@ -230,133 +230,133 @@ void ReportPhysicsObjectsFn(UsdPhysicsObjectType::Enum type, size_t numDesc,
 
     switch (type)
     {
-    case UsdPhysicsObjectType::eScene:
+    case UsdPhysicsObjectType::Scene:
     {
         copyDescs(numDesc, primPaths, cb->scenePrimPaths, objectDescs, 
                   cb->sceneDescs);
     }
     break;
-    case UsdPhysicsObjectType::eRigidBody:
+    case UsdPhysicsObjectType::RigidBody:
     {
         copyDescs(numDesc, primPaths, cb->rigidBodyPrimPaths, objectDescs, 
                   cb->rigidBodyDescs);
     }
     break;
-    case UsdPhysicsObjectType::eSphereShape:
+    case UsdPhysicsObjectType::SphereShape:
     {
         copyDescs(numDesc, primPaths, cb->sphereShapePrimPaths, objectDescs, 
                   cb->sphereShapeDescs);
     }
     break;
-    case UsdPhysicsObjectType::eCubeShape:
+    case UsdPhysicsObjectType::CubeShape:
     {
         copyDescs(numDesc, primPaths, cb->cubeShapePrimPaths, objectDescs, 
                   cb->cubeShapeDescs);
     }
     break;
-    case UsdPhysicsObjectType::eCapsuleShape:
+    case UsdPhysicsObjectType::CapsuleShape:
     {
         copyDescs(numDesc, primPaths, cb->capsuleShapePrimPaths, objectDescs, 
                   cb->capsuleShapeDescs);
     }
     break;
-    case UsdPhysicsObjectType::eCylinderShape:
+    case UsdPhysicsObjectType::CylinderShape:
     {
         copyDescs(numDesc, primPaths, cb->cylinderShapePrimPaths, objectDescs, 
                   cb->cylinderShapeDescs);
     }
     break;
-    case UsdPhysicsObjectType::eConeShape:
+    case UsdPhysicsObjectType::ConeShape:
     {
         copyDescs(numDesc, primPaths, cb->coneShapePrimPaths, objectDescs, 
                   cb->coneShapeDescs);
     }
     break;
-    case UsdPhysicsObjectType::eMeshShape:
+    case UsdPhysicsObjectType::MeshShape:
     {
         copyDescs(numDesc, primPaths, cb->meshShapePrimPaths, objectDescs, 
                   cb->meshShapeDescs);
     }
     break;
-    case UsdPhysicsObjectType::ePlaneShape:
+    case UsdPhysicsObjectType::PlaneShape:
     {
         copyDescs(numDesc, primPaths, cb->planeShapePrimPaths, objectDescs, 
                   cb->planeShapeDescs);
     }
     break;
-    case UsdPhysicsObjectType::eCustomShape:
+    case UsdPhysicsObjectType::CustomShape:
     {
         copyDescs(numDesc, primPaths, cb->customShapePrimPaths, objectDescs,
             cb->customShapeDescs);
     }
     break;
-    case UsdPhysicsObjectType::eSpherePointsShape:
+    case UsdPhysicsObjectType::SpherePointsShape:
     {
         copyDescs(numDesc, primPaths, cb->spherePointShapePrimPaths, objectDescs,
             cb->spherePointsShapeDescs);
     }
     break;
-    case UsdPhysicsObjectType::eFixedJoint:
+    case UsdPhysicsObjectType::FixedJoint:
     {
         copyDescs(numDesc, primPaths, cb->fixedJointPrimPaths, objectDescs, 
                   cb->fixedJointDescs);
     }
     break;
-    case UsdPhysicsObjectType::eRevoluteJoint:
+    case UsdPhysicsObjectType::RevoluteJoint:
     {
         copyDescs(numDesc, primPaths, cb->revoluteJointPrimPaths, objectDescs,
             cb->revoluteJointDescs);
     }
     break;
-    case UsdPhysicsObjectType::ePrismaticJoint:
+    case UsdPhysicsObjectType::PrismaticJoint:
     {
         copyDescs(numDesc, primPaths, cb->prismaticJointPrimPaths, objectDescs,
             cb->prismaticJointDescs);
     }
     break;
-    case UsdPhysicsObjectType::eSphericalJoint:
+    case UsdPhysicsObjectType::SphericalJoint:
     {
         copyDescs(numDesc, primPaths, cb->sphericalJointPrimPaths, objectDescs,
             cb->sphericalJointDescs);
     }
     break;
-    case UsdPhysicsObjectType::eDistanceJoint:
+    case UsdPhysicsObjectType::DistanceJoint:
     {
         copyDescs(numDesc, primPaths, cb->distanceJointPrimPaths, objectDescs,
             cb->distanceJointDescs);
     }
     break;
-    case UsdPhysicsObjectType::eD6Joint:
+    case UsdPhysicsObjectType::D6Joint:
     {
         copyDescs(numDesc, primPaths, cb->d6JointPrimPaths, objectDescs, 
                   cb->d6JointDescs);
     }
     break;
-    case UsdPhysicsObjectType::eCustomJoint:
+    case UsdPhysicsObjectType::CustomJoint:
     {
         copyDescs(numDesc, primPaths, cb->customJointPrimPaths, objectDescs,
             cb->customJointDescs);
     }
     break;
-    case UsdPhysicsObjectType::eRigidBodyMaterial:
+    case UsdPhysicsObjectType::RigidBodyMaterial:
     {
         copyDescs(numDesc, primPaths, cb->rigidBodyMaterialPrimPaths, 
                   objectDescs, cb->rigidBodyMaterialDescs);
     }
     break;
-    case UsdPhysicsObjectType::eArticulation:
+    case UsdPhysicsObjectType::Articulation:
     {
         copyDescs(numDesc, primPaths, cb->articulationPrimPaths, objectDescs,
             cb->articulationDescs);
     }
     break;
-    case UsdPhysicsObjectType::eCollisionGroup:
+    case UsdPhysicsObjectType::CollisionGroup:
     {
         copyDescs(numDesc, primPaths, cb->collisionGroupPrimPaths, objectDescs,
             cb->collisionGroupDescs);
     }
     break;
-    case UsdPhysicsObjectType::eUndefined:
+    case UsdPhysicsObjectType::Undefined:
     default:
     {
         TF_DIAGNOSTIC_WARNING("UsdPhysicsObject type unknown for python "
@@ -435,147 +435,147 @@ dict _LoadUsdPhysicsFromRange(UsdStageWeakPtr stage,
     {
         if (!gMarshalCallback.sceneDescs.empty())
         {
-            retDict[UsdPhysicsObjectType::eScene] =
+            retDict[UsdPhysicsObjectType::Scene] =
                 pxr_boost::python::make_tuple(
                     gMarshalCallback.scenePrimPaths, 
                     gMarshalCallback.sceneDescs);
         }
         if (!gMarshalCallback.rigidBodyDescs.empty())
         {
-            retDict[UsdPhysicsObjectType::eRigidBody] =
+            retDict[UsdPhysicsObjectType::RigidBody] =
                 pxr_boost::python::make_tuple(
                     gMarshalCallback.rigidBodyPrimPaths, 
                     gMarshalCallback.rigidBodyDescs);
         }
         if (!gMarshalCallback.sphereShapeDescs.empty())
         {
-            retDict[UsdPhysicsObjectType::eSphereShape] =
+            retDict[UsdPhysicsObjectType::SphereShape] =
                 pxr_boost::python::make_tuple(
                     gMarshalCallback.sphereShapePrimPaths, 
                     gMarshalCallback.sphereShapeDescs);
         }
         if (!gMarshalCallback.cubeShapeDescs.empty())
         {
-            retDict[UsdPhysicsObjectType::eCubeShape] =
+            retDict[UsdPhysicsObjectType::CubeShape] =
                 pxr_boost::python::make_tuple(
                     gMarshalCallback.cubeShapePrimPaths, 
                     gMarshalCallback.cubeShapeDescs);
         }
         if (!gMarshalCallback.capsuleShapeDescs.empty())
         {
-            retDict[UsdPhysicsObjectType::eCapsuleShape] =
+            retDict[UsdPhysicsObjectType::CapsuleShape] =
                 pxr_boost::python::make_tuple(
                     gMarshalCallback.capsuleShapePrimPaths, 
                     gMarshalCallback.capsuleShapeDescs);
         }
         if (!gMarshalCallback.cylinderShapeDescs.empty())
         {
-            retDict[UsdPhysicsObjectType::eCylinderShape] =
+            retDict[UsdPhysicsObjectType::CylinderShape] =
                 pxr_boost::python::make_tuple(
                     gMarshalCallback.cylinderShapePrimPaths, 
                     gMarshalCallback.cylinderShapeDescs);
         }
         if (!gMarshalCallback.coneShapeDescs.empty())
         {
-            retDict[UsdPhysicsObjectType::eConeShape] =
+            retDict[UsdPhysicsObjectType::ConeShape] =
                 pxr_boost::python::make_tuple(
                     gMarshalCallback.coneShapePrimPaths, 
                     gMarshalCallback.coneShapeDescs);
         }
         if (!gMarshalCallback.meshShapeDescs.empty())
         {
-            retDict[UsdPhysicsObjectType::eMeshShape] =
+            retDict[UsdPhysicsObjectType::MeshShape] =
                 pxr_boost::python::make_tuple(
                     gMarshalCallback.meshShapePrimPaths, 
                     gMarshalCallback.meshShapeDescs);
         }
         if (!gMarshalCallback.planeShapeDescs.empty())
         {
-            retDict[UsdPhysicsObjectType::ePlaneShape] =
+            retDict[UsdPhysicsObjectType::PlaneShape] =
                 pxr_boost::python::make_tuple(
                     gMarshalCallback.planeShapePrimPaths, 
                     gMarshalCallback.planeShapeDescs);
         }
         if (!gMarshalCallback.customShapeDescs.empty())
         {
-            retDict[UsdPhysicsObjectType::eCustomShape] =
+            retDict[UsdPhysicsObjectType::CustomShape] =
                 pxr_boost::python::make_tuple(
                     gMarshalCallback.customShapePrimPaths, 
                     gMarshalCallback.customShapeDescs);
         }
         if (!gMarshalCallback.spherePointsShapeDescs.empty())
         {
-            retDict[UsdPhysicsObjectType::eSpherePointsShape] =
+            retDict[UsdPhysicsObjectType::SpherePointsShape] =
                 pxr_boost::python::make_tuple(
                     gMarshalCallback.spherePointShapePrimPaths, 
                     gMarshalCallback.spherePointsShapeDescs);
         }
         if (!gMarshalCallback.fixedJointDescs.empty())
         {
-            retDict[UsdPhysicsObjectType::eFixedJoint] =
+            retDict[UsdPhysicsObjectType::FixedJoint] =
                 pxr_boost::python::make_tuple(
                     gMarshalCallback.fixedJointPrimPaths, 
                     gMarshalCallback.fixedJointDescs);
         }
         if (!gMarshalCallback.revoluteJointDescs.empty())
         {
-            retDict[UsdPhysicsObjectType::eRevoluteJoint] =
+            retDict[UsdPhysicsObjectType::RevoluteJoint] =
                 pxr_boost::python::make_tuple(
                     gMarshalCallback.revoluteJointPrimPaths, 
                     gMarshalCallback.revoluteJointDescs);
         }
         if (!gMarshalCallback.prismaticJointDescs.empty())
         {
-            retDict[UsdPhysicsObjectType::ePrismaticJoint] =
+            retDict[UsdPhysicsObjectType::PrismaticJoint] =
                 pxr_boost::python::make_tuple(
                     gMarshalCallback.prismaticJointPrimPaths, 
                     gMarshalCallback.prismaticJointDescs);
         }
         if (!gMarshalCallback.sphericalJointDescs.empty())
         {
-            retDict[UsdPhysicsObjectType::eSphericalJoint] =
+            retDict[UsdPhysicsObjectType::SphericalJoint] =
                 pxr_boost::python::make_tuple(
                     gMarshalCallback.sphericalJointPrimPaths, 
                     gMarshalCallback.sphericalJointDescs);
         }
         if (!gMarshalCallback.distanceJointDescs.empty())
         {
-            retDict[UsdPhysicsObjectType::eDistanceJoint] =
+            retDict[UsdPhysicsObjectType::DistanceJoint] =
                 pxr_boost::python::make_tuple(
                     gMarshalCallback.distanceJointPrimPaths, 
                     gMarshalCallback.distanceJointDescs);
         }
         if (!gMarshalCallback.d6JointDescs.empty())
         {
-            retDict[UsdPhysicsObjectType::eD6Joint] =
+            retDict[UsdPhysicsObjectType::D6Joint] =
                 pxr_boost::python::make_tuple(
                     gMarshalCallback.d6JointPrimPaths, 
                     gMarshalCallback.d6JointDescs);
         }
         if (!gMarshalCallback.customJointDescs.empty())
         {
-            retDict[UsdPhysicsObjectType::eCustomJoint] =
+            retDict[UsdPhysicsObjectType::CustomJoint] =
                 pxr_boost::python::make_tuple(
                     gMarshalCallback.customJointPrimPaths, 
                     gMarshalCallback.customJointDescs);
         }
         if (!gMarshalCallback.rigidBodyMaterialDescs.empty())
         {
-            retDict[UsdPhysicsObjectType::eRigidBodyMaterial] =
+            retDict[UsdPhysicsObjectType::RigidBodyMaterial] =
                 pxr_boost::python::make_tuple(
                     gMarshalCallback.rigidBodyMaterialPrimPaths, 
                     gMarshalCallback.rigidBodyMaterialDescs);
         }
         if (!gMarshalCallback.articulationDescs.empty())
         {
-            retDict[UsdPhysicsObjectType::eArticulation] =
+            retDict[UsdPhysicsObjectType::Articulation] =
                 pxr_boost::python::make_tuple(
                     gMarshalCallback.articulationPrimPaths, 
                     gMarshalCallback.articulationDescs);
         }
         if (!gMarshalCallback.collisionGroupDescs.empty())
         {
-            retDict[UsdPhysicsObjectType::eCollisionGroup] =
+            retDict[UsdPhysicsObjectType::CollisionGroup] =
                 pxr_boost::python::make_tuple(
                     gMarshalCallback.collisionGroupPrimPaths, 
                     gMarshalCallback.collisionGroupDescs);
@@ -939,44 +939,44 @@ _DistanceJointDesc_Repr(const UsdPhysicsDistanceJointDesc& self)
 void wrapParseUtils()
 {
     enum_<UsdPhysicsObjectType::Enum>("ObjectType")
-        .value("Undefined", UsdPhysicsObjectType::eUndefined)
-        .value("Scene", UsdPhysicsObjectType::eScene)
-        .value("RigidBody", UsdPhysicsObjectType::eRigidBody)
-        .value("SphereShape", UsdPhysicsObjectType::eSphereShape)
-        .value("CubeShape", UsdPhysicsObjectType::eCubeShape)
-        .value("CapsuleShape", UsdPhysicsObjectType::eCapsuleShape)
-        .value("CylinderShape", UsdPhysicsObjectType::eCylinderShape)
-        .value("ConeShape", UsdPhysicsObjectType::eConeShape)
-        .value("MeshShape", UsdPhysicsObjectType::eMeshShape)
-        .value("PlaneShape", UsdPhysicsObjectType::ePlaneShape)
-        .value("CustomShape", UsdPhysicsObjectType::eCustomShape)
-        .value("SpherePointsShape", UsdPhysicsObjectType::eSpherePointsShape)
-        .value("FixedJoint", UsdPhysicsObjectType::eFixedJoint)
-        .value("RevoluteJoint", UsdPhysicsObjectType::eRevoluteJoint)
-        .value("PrismaticJoint", UsdPhysicsObjectType::ePrismaticJoint)
-        .value("SphericalJoint", UsdPhysicsObjectType::eSphericalJoint)
-        .value("DistanceJoint", UsdPhysicsObjectType::eDistanceJoint)
-        .value("D6Joint", UsdPhysicsObjectType::eD6Joint)
-        .value("CustomJoint", UsdPhysicsObjectType::eCustomJoint)
-        .value("RigidBodyMaterial", UsdPhysicsObjectType::eRigidBodyMaterial)
-        .value("Articulation", UsdPhysicsObjectType::eArticulation)
-        .value("CollisionGroup", UsdPhysicsObjectType::eCollisionGroup)
+        .value("Undefined", UsdPhysicsObjectType::Undefined)
+        .value("Scene", UsdPhysicsObjectType::Scene)
+        .value("RigidBody", UsdPhysicsObjectType::RigidBody)
+        .value("SphereShape", UsdPhysicsObjectType::SphereShape)
+        .value("CubeShape", UsdPhysicsObjectType::CubeShape)
+        .value("CapsuleShape", UsdPhysicsObjectType::CapsuleShape)
+        .value("CylinderShape", UsdPhysicsObjectType::CylinderShape)
+        .value("ConeShape", UsdPhysicsObjectType::ConeShape)
+        .value("MeshShape", UsdPhysicsObjectType::MeshShape)
+        .value("PlaneShape", UsdPhysicsObjectType::PlaneShape)
+        .value("CustomShape", UsdPhysicsObjectType::CustomShape)
+        .value("SpherePointsShape", UsdPhysicsObjectType::SpherePointsShape)
+        .value("FixedJoint", UsdPhysicsObjectType::FixedJoint)
+        .value("RevoluteJoint", UsdPhysicsObjectType::RevoluteJoint)
+        .value("PrismaticJoint", UsdPhysicsObjectType::PrismaticJoint)
+        .value("SphericalJoint", UsdPhysicsObjectType::SphericalJoint)
+        .value("DistanceJoint", UsdPhysicsObjectType::DistanceJoint)
+        .value("D6Joint", UsdPhysicsObjectType::D6Joint)
+        .value("CustomJoint", UsdPhysicsObjectType::CustomJoint)
+        .value("RigidBodyMaterial", UsdPhysicsObjectType::RigidBodyMaterial)
+        .value("Articulation", UsdPhysicsObjectType::Articulation)
+        .value("CollisionGroup", UsdPhysicsObjectType::CollisionGroup)
         ;
 
     enum_<UsdPhysicsAxis::Enum>("Axis")
-        .value("X", UsdPhysicsAxis::eX)
-        .value("Y", UsdPhysicsAxis::eY)
-        .value("Z", UsdPhysicsAxis::eZ)
+        .value("X", UsdPhysicsAxis::X)
+        .value("Y", UsdPhysicsAxis::Y)
+        .value("Z", UsdPhysicsAxis::Z)
         ;
 
     enum_<UsdPhysicsJointDOF::Enum>("JointDOF")
-        .value("Distance", UsdPhysicsJointDOF::eDistance)
-        .value("TransX", UsdPhysicsJointDOF::eTransX)
-        .value("TransY", UsdPhysicsJointDOF::eTransY)
-        .value("TransZ", UsdPhysicsJointDOF::eTransZ)
-        .value("RotX", UsdPhysicsJointDOF::eRotX)
-        .value("RotY", UsdPhysicsJointDOF::eRotY)
-        .value("RotZ", UsdPhysicsJointDOF::eRotZ)
+        .value("Distance", UsdPhysicsJointDOF::Distance)
+        .value("TransX", UsdPhysicsJointDOF::TransX)
+        .value("TransY", UsdPhysicsJointDOF::TransY)
+        .value("TransZ", UsdPhysicsJointDOF::TransZ)
+        .value("RotX", UsdPhysicsJointDOF::RotX)
+        .value("RotY", UsdPhysicsJointDOF::RotY)
+        .value("RotZ", UsdPhysicsJointDOF::RotZ)
         ;
 
     class_<_CustomUsdPhysicsTokens>

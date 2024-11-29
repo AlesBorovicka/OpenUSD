@@ -78,7 +78,7 @@ bool ParseArticulationDesc(const UsdPhysicsArticulationRootAPI& articulationAPI,
     }
     else
     {
-        TF_RUNTIME_ERROR("Provided UsdPhysicsArticulationRootAPI or "
+        TF_CODING_ERROR("Provided UsdPhysicsArticulationRootAPI or "
                          "UsdPhysicsArticulationDesc is not valid.");
         return false;
     }
@@ -88,7 +88,7 @@ bool ParseArticulationDesc(const UsdPhysicsArticulationRootAPI& articulationAPI,
 UsdPhysicsObjectType::Enum GetCollisionType(const UsdPrim& prim,
     const std::vector<TfToken>* customTokens, TfToken* customeGeometryToken)
 {
-    UsdPhysicsObjectType::Enum retVal = UsdPhysicsObjectType::eUndefined;
+    UsdPhysicsObjectType::Enum retVal = UsdPhysicsObjectType::Undefined;
 
     // custom shape handling
     if (customTokens)
@@ -103,20 +103,20 @@ UsdPhysicsObjectType::Enum GetCollisionType(const UsdPrim& prim,
             {
                 if (apis[j] == (*customTokens)[i])
                 {
-                    retVal = UsdPhysicsObjectType::eCustomShape;
+                    retVal = UsdPhysicsObjectType::CustomShape;
                     if (customeGeometryToken) {
                         *customeGeometryToken = apis[j];
                     }
                     break;
                 }
             }
-            if (retVal == UsdPhysicsObjectType::eCustomShape)
+            if (retVal == UsdPhysicsObjectType::CustomShape)
             {
                 break;
             }
             if (primType == (*customTokens)[i])
             {
-                retVal = UsdPhysicsObjectType::eCustomShape;
+                retVal = UsdPhysicsObjectType::CustomShape;
                 if (customeGeometryToken) {
                     *customeGeometryToken = primType;
                 }
@@ -125,7 +125,7 @@ UsdPhysicsObjectType::Enum GetCollisionType(const UsdPrim& prim,
         }
     }
 
-    if (retVal == UsdPhysicsObjectType::eCustomShape) {
+    if (retVal == UsdPhysicsObjectType::CustomShape) {
         return retVal;
     }
 
@@ -137,35 +137,35 @@ UsdPhysicsObjectType::Enum GetCollisionType(const UsdPrim& prim,
         // array of spheres corresponding to the 'UsdPhysicsSpherePointsShapeDesc'
         if (prim.IsA<UsdGeomMesh>())
         {
-            retVal = UsdPhysicsObjectType::eMeshShape;
+            retVal = UsdPhysicsObjectType::MeshShape;
         }
         else if (prim.IsA<UsdGeomCube>())
         {
-            retVal = UsdPhysicsObjectType::eCubeShape;
+            retVal = UsdPhysicsObjectType::CubeShape;
         }
         else if (prim.IsA<UsdGeomSphere>())
         {
-            retVal = UsdPhysicsObjectType::eSphereShape;
+            retVal = UsdPhysicsObjectType::SphereShape;
         }
         else if (prim.IsA<UsdGeomCapsule>())
         {
-            retVal = UsdPhysicsObjectType::eCapsuleShape;
+            retVal = UsdPhysicsObjectType::CapsuleShape;
         }
         else if (prim.IsA<UsdGeomCylinder>())
         {
-            retVal = UsdPhysicsObjectType::eCylinderShape;
+            retVal = UsdPhysicsObjectType::CylinderShape;
         }
         else if (prim.IsA<UsdGeomCone>())
         {
-            retVal = UsdPhysicsObjectType::eConeShape;
+            retVal = UsdPhysicsObjectType::ConeShape;
         }
         else if (prim.IsA<UsdGeomPlane>())
         {
-            retVal = UsdPhysicsObjectType::ePlaneShape;
+            retVal = UsdPhysicsObjectType::PlaneShape;
         }
         else if (prim.IsA<UsdGeomPoints>())
         {
-            retVal = UsdPhysicsObjectType::eSpherePointsShape;
+            retVal = UsdPhysicsObjectType::SpherePointsShape;
         }
     }
 
@@ -304,14 +304,14 @@ bool ParseSphereShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
         }
         else
         {
-            TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI is not applied "
+            TF_CODING_ERROR("Provided UsdPhysicsCollisionAPI is not applied "
                              "to a UsdGeomSphere.");
             return false;
         }
     }
     else
     {
-        TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI or "
+        TF_CODING_ERROR("Provided UsdPhysicsCollisionAPI or "
                          "UsdPhysicsSphereShapeDesc is not valid.");
         return false;
     }
@@ -357,14 +357,14 @@ bool ParseCubeShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
         }
         else
         {
-            TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI is not applied "
+            TF_CODING_ERROR("Provided UsdPhysicsCollisionAPI is not applied "
                              "to a UsdGeomCube.");
             return false;
         }
     }
     else
     {
-        TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI or "
+        TF_CODING_ERROR("Provided UsdPhysicsCollisionAPI or "
                          "UsdPhysicsCubeShapeDesc is not valid.");
         return false;
 
@@ -386,7 +386,7 @@ bool ParseCylinderShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
 
             float radius = 1.0f;
             float halfHeight = 1.0f;
-            UsdPhysicsAxis::Enum axis = UsdPhysicsAxis::eX;
+            UsdPhysicsAxis::Enum axis = UsdPhysicsAxis::X;
 
             // Get shape parameters
             {
@@ -402,9 +402,9 @@ bool ParseCylinderShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
                 {
                     shape.GetAxisAttr().Get(&capAxis);
                     if (capAxis == UsdPhysicsTokens.Get()->y)
-                        axis = UsdPhysicsAxis::eY;
+                        axis = UsdPhysicsAxis::Y;
                     else if (capAxis == UsdPhysicsTokens.Get()->z)
-                        axis = UsdPhysicsAxis::eZ;
+                        axis = UsdPhysicsAxis::Z;
                 }
             }
 
@@ -412,12 +412,12 @@ bool ParseCylinderShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
                 // scale the radius and height based on the given axis token
                 const GfVec3d sc = tr.GetScale();
                 CheckNonUniformScale(sc, usdPrim.GetPrimPath());
-                if (axis == UsdPhysicsAxis::eX)
+                if (axis == UsdPhysicsAxis::X)
                 {
                     halfHeight *= float(sc[0]);
                     radius *= fmaxf(fabsf(float(sc[1])), fabsf(float(sc[2])));
                 }
-                else if (axis == UsdPhysicsAxis::eY)
+                else if (axis == UsdPhysicsAxis::Y)
                 {
                     halfHeight *= float(sc[1]);
                     radius *= fmaxf(fabsf(float(sc[0])), fabsf(float(sc[2])));
@@ -437,14 +437,14 @@ bool ParseCylinderShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
         }
         else
         {
-            TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI is not applied "
+            TF_CODING_ERROR("Provided UsdPhysicsCollisionAPI is not applied "
                              "to a UsdGeomCylinder.");
             return false;
         }
     }
     else
     {
-        TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI or "
+        TF_CODING_ERROR("Provided UsdPhysicsCollisionAPI or "
                          "UsdPhysicsCylinderShapeDesc is not valid.");
         return false;
 
@@ -466,7 +466,7 @@ bool ParseCapsuleShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
 
             float radius = 1.0f;
             float halfHeight = 1.0f;
-            UsdPhysicsAxis::Enum axis = UsdPhysicsAxis::eX;
+            UsdPhysicsAxis::Enum axis = UsdPhysicsAxis::X;
 
             // Get shape parameters
             {
@@ -482,9 +482,9 @@ bool ParseCapsuleShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
                 {
                     shape.GetAxisAttr().Get(&capAxis);
                     if (capAxis == UsdPhysicsTokens.Get()->y)
-                        axis = UsdPhysicsAxis::eY;
+                        axis = UsdPhysicsAxis::Y;
                     else if (capAxis == UsdPhysicsTokens.Get()->z)
-                        axis = UsdPhysicsAxis::eZ;
+                        axis = UsdPhysicsAxis::Z;
                 }
             }
 
@@ -492,12 +492,12 @@ bool ParseCapsuleShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
                 // scale the radius and height based on the given axis token
                 const GfVec3d sc = tr.GetScale();
                 CheckNonUniformScale(sc, usdPrim.GetPrimPath());
-                if (axis == UsdPhysicsAxis::eX)
+                if (axis == UsdPhysicsAxis::X)
                 {
                     halfHeight *= float(sc[0]);
                     radius *= fmaxf(fabsf(float(sc[1])), fabsf(float(sc[2])));
                 }
-                else if (axis == UsdPhysicsAxis::eY)
+                else if (axis == UsdPhysicsAxis::Y)
                 {
                     halfHeight *= float(sc[1]);
                     radius *= fmaxf(fabsf(float(sc[0])), fabsf(float(sc[2])));
@@ -517,14 +517,14 @@ bool ParseCapsuleShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
         }
         else
         {
-            TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI is not applied "
+            TF_CODING_ERROR("Provided UsdPhysicsCollisionAPI is not applied "
                              "to a UsdGeomCapsule.");
             return false;
         }
     }
     else
     {
-        TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI or "
+        TF_CODING_ERROR("Provided UsdPhysicsCollisionAPI or "
                          "UsdPhysicsCapsuleShapeDesc is not valid.");
         return false;
 
@@ -546,7 +546,7 @@ bool ParseConeShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
 
             float radius = 1.0f;
             float halfHeight = 1.0f;
-            UsdPhysicsAxis::Enum axis = UsdPhysicsAxis::eX;
+            UsdPhysicsAxis::Enum axis = UsdPhysicsAxis::X;
 
             // Get shape parameters
             {
@@ -562,9 +562,9 @@ bool ParseConeShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
                 {
                     shape.GetAxisAttr().Get(&capAxis);
                     if (capAxis == UsdPhysicsTokens.Get()->y)
-                        axis = UsdPhysicsAxis::eY;
+                        axis = UsdPhysicsAxis::Y;
                     else if (capAxis == UsdPhysicsTokens.Get()->z)
-                        axis = UsdPhysicsAxis::eZ;
+                        axis = UsdPhysicsAxis::Z;
                 }
             }
 
@@ -572,12 +572,12 @@ bool ParseConeShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
                 // scale the radius and height based on the given axis token
                 const GfVec3d sc = tr.GetScale();
                 CheckNonUniformScale(sc, usdPrim.GetPrimPath());
-                if (axis == UsdPhysicsAxis::eX)
+                if (axis == UsdPhysicsAxis::X)
                 {
                     halfHeight *= float(sc[0]);
                     radius *= fmaxf(fabsf(float(sc[1])), fabsf(float(sc[2])));
                 }
-                else if (axis == UsdPhysicsAxis::eY)
+                else if (axis == UsdPhysicsAxis::Y)
                 {
                     halfHeight *= float(sc[1]);
                     radius *= fmaxf(fabsf(float(sc[0])), fabsf(float(sc[2])));
@@ -597,14 +597,14 @@ bool ParseConeShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
         }
         else
         {
-            TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI is not applied "
+            TF_CODING_ERROR("Provided UsdPhysicsCollisionAPI is not applied "
                              "to a UsdGeomCone.");
             return false;
         }
     }
     else
     {
-        TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI or "
+        TF_CODING_ERROR("Provided UsdPhysicsCollisionAPI or "
                          "UsdPhysicsConeShapeDesc is not valid.");
         return false;
 
@@ -666,14 +666,14 @@ bool ParseMeshShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
         }
         else
         {
-            TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI is not applied "
+            TF_CODING_ERROR("Provided UsdPhysicsCollisionAPI is not applied "
                              "to a UsdGeomMesh.");
             return false;
         }
     }
     else
     {
-        TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI or "
+        TF_CODING_ERROR("Provided UsdPhysicsCollisionAPI or "
                          "UsdPhysicsMeshShapeDesc is not valid.");
         return false;
 
@@ -690,17 +690,17 @@ bool ParsePlaneShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
         const UsdGeomPlane shape(usdPrim);
         if (shape)
         {
-            UsdPhysicsAxis::Enum axis = UsdPhysicsAxis::eX;
+            UsdPhysicsAxis::Enum axis = UsdPhysicsAxis::X;
 
             TfToken tfAxis;
             shape.GetAxisAttr().Get(&tfAxis);
             if (tfAxis == UsdPhysicsTokens.Get()->y)
             {
-                axis = UsdPhysicsAxis::eY;
+                axis = UsdPhysicsAxis::Y;
             }
             else if (tfAxis == UsdPhysicsTokens.Get()->z)
             {
-                axis = UsdPhysicsAxis::eZ;
+                axis = UsdPhysicsAxis::Z;
             }
 
             planeShapeDesc->axis = axis;
@@ -710,14 +710,14 @@ bool ParsePlaneShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
         }
         else
         {
-            TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI is not applied "
+            TF_CODING_ERROR("Provided UsdPhysicsCollisionAPI is not applied "
                              "to a UsdGeomPlane.");
             return false;
         }
     }
     else
     {
-        TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI or "
+        TF_CODING_ERROR("Provided UsdPhysicsCollisionAPI or "
                          "UsdPhysicsPlaneShapeDesc is not valid.");
         return false;
 
@@ -791,14 +791,14 @@ bool ParseSpherePointsShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
         }
         else
         {
-            TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI is not applied "
+            TF_CODING_ERROR("Provided UsdPhysicsCollisionAPI is not applied "
                              "to a UsdGeomPoints.");
             return false;
         }
     }
     else
     {
-        TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI or "
+        TF_CODING_ERROR("Provided UsdPhysicsCollisionAPI or "
                          "UsdPhysicsSpherePointsShapeDesc is not valid.");
         return false;
     }
@@ -817,7 +817,7 @@ bool ParseCustomShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
     }
     else
     {
-        TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionAPI or "
+        TF_CODING_ERROR("Provided UsdPhysicsCollisionAPI or "
                          "UsdPhysicsCustomShapeDesc is not valid.");
         return false;
     }
@@ -845,7 +845,7 @@ bool ParseCollisionGroupDesc(const UsdPhysicsCollisionGroup& collisionGroup,
     }
     else
     {
-        TF_RUNTIME_ERROR("Provided UsdPhysicsCollisionGroup or "
+        TF_CODING_ERROR("Provided UsdPhysicsCollisionGroup or "
                          "UsdPhysicsCollisionGroupDesc is not valid.");
         return false;
     }
@@ -881,7 +881,7 @@ bool CheckJointRel(const SdfPath& relPath, const UsdPrim& jointPrim)
     const UsdPrim relPrim = jointPrim.GetStage()->GetPrimAtPath(relPath);
     if (!relPrim)
     {
-        TF_RUNTIME_ERROR("Joint (%s) body relationship %s points to a non "
+        TF_CODING_ERROR("Joint (%s) body relationship %s points to a non "
                          "existent prim, joint will not be parsed.",
             jointPrim.GetPrimPath().GetText(),
             relPath.GetText());
@@ -1064,7 +1064,7 @@ bool ParseDistanceJointDesc(const UsdPhysicsDistanceJoint& distanceJoint,
     }
     else
     {
-        TF_RUNTIME_ERROR("Provided UsdPhysicsDistanceJoint or "
+        TF_CODING_ERROR("Provided UsdPhysicsDistanceJoint or "
                          "UsdPhysicsDistanceJointDesc is not valid.");
         return false;
     }
@@ -1092,7 +1092,7 @@ bool ParseDrive(const UsdPhysicsDriveAPI& drive,
     }
     else
     {
-        TF_RUNTIME_ERROR(
+        TF_CODING_ERROR(
             "Provided UsdPhysicsDriveAPI or UsdPhysicsJointDrive is not valid.");
         return false;
     }
@@ -1113,7 +1113,7 @@ bool ParseFixedJointDesc(const UsdPhysicsFixedJoint& fixedJoint,
     }
     else
     {
-        TF_RUNTIME_ERROR("Provided UsdPhysicsFixedJoint or "
+        TF_CODING_ERROR("Provided UsdPhysicsFixedJoint or "
                          "UsdPhysicsFixedJointDesc is not valid.");
         return false;
     }
@@ -1137,7 +1137,7 @@ bool ParseLimit(const UsdPhysicsLimitAPI& limit,
     }
     else
     {
-        TF_RUNTIME_ERROR("Provided UsdPhysicsLimitAPI or "
+        TF_CODING_ERROR("Provided UsdPhysicsLimitAPI or "
                          "UsdPhysicsJointLimit is not valid.");
         return false;
     }
@@ -1160,17 +1160,17 @@ bool ParseD6JointDesc(const UsdPhysicsJoint& jointPrim,
         const std::array<
             std::pair<UsdPhysicsJointDOF::Enum, TfToken>, 7> axisVector =
         {
-            std::make_pair(UsdPhysicsJointDOF::eDistance, 
+            std::make_pair(UsdPhysicsJointDOF::Distance, 
                            UsdPhysicsTokens->distance),
-            std::make_pair(UsdPhysicsJointDOF::eTransX, 
+            std::make_pair(UsdPhysicsJointDOF::TransX, 
                            UsdPhysicsTokens->transX),
-            std::make_pair(UsdPhysicsJointDOF::eTransY, 
+            std::make_pair(UsdPhysicsJointDOF::TransY, 
                            UsdPhysicsTokens->transY),
-            std::make_pair(UsdPhysicsJointDOF::eTransZ, 
+            std::make_pair(UsdPhysicsJointDOF::TransZ, 
                            UsdPhysicsTokens->transZ),
-            std::make_pair(UsdPhysicsJointDOF::eRotX, UsdPhysicsTokens->rotX),
-            std::make_pair(UsdPhysicsJointDOF::eRotY, UsdPhysicsTokens->rotY),
-            std::make_pair(UsdPhysicsJointDOF::eRotZ, UsdPhysicsTokens->rotZ)
+            std::make_pair(UsdPhysicsJointDOF::RotX, UsdPhysicsTokens->rotX),
+            std::make_pair(UsdPhysicsJointDOF::RotY, UsdPhysicsTokens->rotY),
+            std::make_pair(UsdPhysicsJointDOF::RotZ, UsdPhysicsTokens->rotZ)
         };
 
         for (size_t i = 0; i < axisVector.size(); i++)
@@ -1204,7 +1204,7 @@ bool ParseD6JointDesc(const UsdPhysicsJoint& jointPrim,
     }
     else
     {
-        TF_RUNTIME_ERROR("Provided UsdPhysicsJoint or UsdPhysicsJointDesc is "
+        TF_CODING_ERROR("Provided UsdPhysicsJoint or UsdPhysicsJointDesc is "
                          "not valid.");
         return false;
     }
@@ -1225,7 +1225,7 @@ bool ParseCustomJointDesc(const UsdPhysicsJoint& jointPrim,
     }
     else
     {
-        TF_RUNTIME_ERROR("Provided UsdPhysicsJoint or UsdPhysicsJointDesc is "
+        TF_CODING_ERROR("Provided UsdPhysicsJoint or UsdPhysicsJointDesc is "
                          "not valid.");
         return false;
     }
@@ -1251,7 +1251,7 @@ bool ParseRigidBodyMaterialDesc(const UsdPhysicsMaterialAPI& usdMaterial,
     }
     else
     {
-        TF_RUNTIME_ERROR("Provided UsdPhysicsMaterialAPI or "
+        TF_CODING_ERROR("Provided UsdPhysicsMaterialAPI or "
                          "UsdPhysicsRigidBodyMaterialDesc is not valid.");
         return false;
 
@@ -1284,14 +1284,14 @@ bool ParsePrismaticJointDesc(const UsdPhysicsPrismaticJoint& prismaticJoint,
             return false;
         }
 
-        UsdPhysicsAxis::Enum jointAxis = UsdPhysicsAxis::eX;
+        UsdPhysicsAxis::Enum jointAxis = UsdPhysicsAxis::X;
         TfToken axis = UsdPhysicsTokens->x;
         prismaticJoint.GetAxisAttr().Get(&axis);
 
         if (axis == UsdPhysicsTokens->y)
-            jointAxis = UsdPhysicsAxis::eY;
+            jointAxis = UsdPhysicsAxis::Y;
         else if (axis == UsdPhysicsTokens->z)
-            jointAxis = UsdPhysicsAxis::eZ;
+            jointAxis = UsdPhysicsAxis::Z;
         prismaticJointDesc->axis = jointAxis;
 
         prismaticJointDesc->limit.enabled = false;
@@ -1315,7 +1315,7 @@ bool ParsePrismaticJointDesc(const UsdPhysicsPrismaticJoint& prismaticJoint,
     }
     else
     {
-        TF_RUNTIME_ERROR("Provided UsdPhysicsPrismaticJoint or "
+        TF_CODING_ERROR("Provided UsdPhysicsPrismaticJoint or "
                          "UsdPhysicsPrismaticJointDesc is not valid.");
         return false;
     }
@@ -1348,14 +1348,14 @@ bool ParseRevoluteJointDesc(const UsdPhysicsRevoluteJoint& revoluteJoint,
             return false;
         }
 
-        UsdPhysicsAxis::Enum jointAxis = UsdPhysicsAxis::eX;
+        UsdPhysicsAxis::Enum jointAxis = UsdPhysicsAxis::X;
         TfToken axis = UsdPhysicsTokens->x;
         revoluteJoint.GetAxisAttr().Get(&axis);
 
         if (axis == UsdPhysicsTokens->y)
-            jointAxis = UsdPhysicsAxis::eY;
+            jointAxis = UsdPhysicsAxis::Y;
         else if (axis == UsdPhysicsTokens->z)
-            jointAxis = UsdPhysicsAxis::eZ;
+            jointAxis = UsdPhysicsAxis::Z;
         revoluteJointDesc->axis = jointAxis;
 
         revoluteJointDesc->limit.enabled = false;
@@ -1379,7 +1379,7 @@ bool ParseRevoluteJointDesc(const UsdPhysicsRevoluteJoint& revoluteJoint,
     }
     else
     {
-        TF_RUNTIME_ERROR("Provided UsdPhysicsJoint or UsdPhysicsJointDesc is "
+        TF_CODING_ERROR("Provided UsdPhysicsJoint or UsdPhysicsJointDesc is "
                          "not valid.");
         return false;
     }
@@ -1521,7 +1521,7 @@ bool ParseRigidBodyDesc(const UsdPhysicsRigidBodyAPI& rigidBodyAPI,
     }
     else
     {
-        TF_RUNTIME_ERROR("Provided UsdPhysicsRigidBodyAPI or "
+        TF_CODING_ERROR("Provided UsdPhysicsRigidBodyAPI or "
                          "UsdPhysicsRigidBodyDesc is not valid.");
         return false;
     }
@@ -1539,14 +1539,14 @@ bool ParseSphericalJointDesc(const UsdPhysicsSphericalJoint& sphericalJoint,
             return false;
         }
 
-        UsdPhysicsAxis::Enum jointAxis = UsdPhysicsAxis::eX;
+        UsdPhysicsAxis::Enum jointAxis = UsdPhysicsAxis::X;
         TfToken axis = UsdPhysicsTokens->x;
         sphericalJoint.GetAxisAttr().Get(&axis);
 
         if (axis == UsdPhysicsTokens->y)
-            jointAxis = UsdPhysicsAxis::eY;
+            jointAxis = UsdPhysicsAxis::Y;
         else if (axis == UsdPhysicsTokens->z)
-            jointAxis = UsdPhysicsAxis::eZ;
+            jointAxis = UsdPhysicsAxis::Z;
         sphericalJointDesc->axis = jointAxis;
 
         sphericalJointDesc->limit.enabled = false;
@@ -1565,7 +1565,7 @@ bool ParseSphericalJointDesc(const UsdPhysicsSphericalJoint& sphericalJoint,
     }
     else
     {
-        TF_RUNTIME_ERROR("Provided UsdPhysicsSphericalJoint or "
+        TF_CODING_ERROR("Provided UsdPhysicsSphericalJoint or "
                          "UsdPhysicsSphericalJointDesc is not valid.");
         return false;
     }
@@ -1611,7 +1611,7 @@ bool ParseSceneDesc(const UsdPhysicsScene& scene,
     }
     else
     {
-        TF_RUNTIME_ERROR("Provided UsdPhysicsScene or UsdPhysicsSceneDesc is "
+        TF_CODING_ERROR("Provided UsdPhysicsScene or UsdPhysicsSceneDesc is "
                          "not valid.");
         return false;
     }
@@ -2507,13 +2507,13 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
 
     if (!stage)
     {
-        TF_RUNTIME_ERROR("Provided stage not valid.");
+        TF_CODING_ERROR("Provided stage not valid.");
         return false;
     }
 
     if (!reportFn)
     {
-        TF_RUNTIME_ERROR("Provided report callback is not valid.");
+        TF_CODING_ERROR("Provided report callback is not valid.");
         return false;
     }
 
@@ -2922,7 +2922,7 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
                                          &customPhysicsTokens->shapeTokens, 
                                          &shapeToken);
                     collisionTypes[i] = shapeType;
-                    if (shapeType == UsdPhysicsObjectType::eCustomShape)
+                    if (shapeType == UsdPhysicsObjectType::CustomShape)
                     {
                         customTokens.push_back(shapeToken);
                     }
@@ -2953,52 +2953,52 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
         UsdPhysicsObjectType::Enum type = collisionTypes[i];
         switch (type)
         {
-        case UsdPhysicsObjectType::eSphereShape:
+        case UsdPhysicsObjectType::SphereShape:
         {
             sphereShapePrims.push_back(collisionPrims[i]);
         }
         break;
-        case UsdPhysicsObjectType::eCubeShape:
+        case UsdPhysicsObjectType::CubeShape:
         {
             cubeShapePrims.push_back(collisionPrims[i]);
         }
         break;
-        case UsdPhysicsObjectType::eCapsuleShape:
+        case UsdPhysicsObjectType::CapsuleShape:
         {
             capsuleShapePrims.push_back(collisionPrims[i]);
         }
         break;
-        case UsdPhysicsObjectType::eCylinderShape:
+        case UsdPhysicsObjectType::CylinderShape:
         {
             cylinderShapePrims.push_back(collisionPrims[i]);
         }
         break;
-        case UsdPhysicsObjectType::eConeShape:
+        case UsdPhysicsObjectType::ConeShape:
         {
             coneShapePrims.push_back(collisionPrims[i]);
         }
         break;
-        case UsdPhysicsObjectType::eMeshShape:
+        case UsdPhysicsObjectType::MeshShape:
         {
             meshShapePrims.push_back(collisionPrims[i]);
         }
         break;
-        case UsdPhysicsObjectType::ePlaneShape:
+        case UsdPhysicsObjectType::PlaneShape:
         {
             planeShapePrims.push_back(collisionPrims[i]);
         }
         break;
-        case UsdPhysicsObjectType::eCustomShape:
+        case UsdPhysicsObjectType::CustomShape:
         {
             customShapePrims.push_back(collisionPrims[i]);
         }
         break;
-        case UsdPhysicsObjectType::eSpherePointsShape:
+        case UsdPhysicsObjectType::SpherePointsShape:
         {
             spherePointsShapePrims.push_back(collisionPrims[i]);
         }
         break;
-        case UsdPhysicsObjectType::eUndefined:
+        case UsdPhysicsObjectType::Undefined:
         default:
         {
             TF_DIAGNOSTIC_WARNING("CollisionAPI applied to an unknown "
@@ -3226,82 +3226,82 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
     // get the descriptors, finalize them and send them out in an order
     // 1. send out the scenes
     {
-        CallReportFn(UsdPhysicsObjectType::eScene, scenePrims, sceneDescs,
+        CallReportFn(UsdPhysicsObjectType::Scene, scenePrims, sceneDescs,
             reportFn, primPathsVector, userData);
     }
 
     // 2. send out the CollisionGroups
     {
-        CallReportFn(UsdPhysicsObjectType::eCollisionGroup, collisionGroupPrims,
+        CallReportFn(UsdPhysicsObjectType::CollisionGroup, collisionGroupPrims,
             collisionGroupsDescs, reportFn, primPathsVector, userData);
     }
 
     // 3. send out the materials
     {
-        CallReportFn(UsdPhysicsObjectType::eRigidBodyMaterial, materialPrims,
+        CallReportFn(UsdPhysicsObjectType::RigidBodyMaterial, materialPrims,
             materialDescs, reportFn, primPathsVector, userData);
     }
 
     // 4. finish out and send out shapes
     {
-        CallReportFn(UsdPhysicsObjectType::eSphereShape, sphereShapePrims, 
+        CallReportFn(UsdPhysicsObjectType::SphereShape, sphereShapePrims, 
                      sphereShapeDescs,
             reportFn, primPathsVector, userData);
-        CallReportFn(UsdPhysicsObjectType::eCubeShape, cubeShapePrims, 
+        CallReportFn(UsdPhysicsObjectType::CubeShape, cubeShapePrims, 
                      cubeShapeDescs,
             reportFn, primPathsVector, userData);
-        CallReportFn(UsdPhysicsObjectType::eCapsuleShape, capsuleShapePrims,
+        CallReportFn(UsdPhysicsObjectType::CapsuleShape, capsuleShapePrims,
             capsuleShapeDescs, reportFn, primPathsVector, userData);
-        CallReportFn(UsdPhysicsObjectType::eCylinderShape, cylinderShapePrims,
+        CallReportFn(UsdPhysicsObjectType::CylinderShape, cylinderShapePrims,
             cylinderShapeDescs, reportFn, primPathsVector, userData);
-        CallReportFn(UsdPhysicsObjectType::eConeShape, coneShapePrims, 
+        CallReportFn(UsdPhysicsObjectType::ConeShape, coneShapePrims, 
                      coneShapeDescs,
             reportFn, primPathsVector, userData);
-        CallReportFn(UsdPhysicsObjectType::ePlaneShape, planeShapePrims, 
+        CallReportFn(UsdPhysicsObjectType::PlaneShape, planeShapePrims, 
                      planeShapeDescs,
             reportFn, primPathsVector, userData);
-        CallReportFn(UsdPhysicsObjectType::eMeshShape, meshShapePrims, 
+        CallReportFn(UsdPhysicsObjectType::MeshShape, meshShapePrims, 
                      meshShapeDescs,
             reportFn, primPathsVector, userData);
-        CallReportFn(UsdPhysicsObjectType::eSpherePointsShape, 
+        CallReportFn(UsdPhysicsObjectType::SpherePointsShape, 
                      spherePointsShapePrims,
             spherePointsShapeDescs, reportFn, primPathsVector, userData);
-        CallReportFn(UsdPhysicsObjectType::eCustomShape, customShapePrims, 
+        CallReportFn(UsdPhysicsObjectType::CustomShape, customShapePrims, 
                      customShapeDescs,
             reportFn, primPathsVector, userData);
     }
 
     // 5. send out articulations
     {
-        CallReportFn(UsdPhysicsObjectType::eArticulation, articulationPrims,
+        CallReportFn(UsdPhysicsObjectType::Articulation, articulationPrims,
             articulationDescs, reportFn, primPathsVector, userData);
     }
 
     // 6. send out bodies
     {
-        CallReportFn(UsdPhysicsObjectType::eRigidBody, rigidBodyPrims, 
+        CallReportFn(UsdPhysicsObjectType::RigidBody, rigidBodyPrims, 
                      rigidBodyDescs, reportFn, primPathsVector, userData);
     }
 
     // 7. send out joints    
     {
-        CallReportFn(UsdPhysicsObjectType::eFixedJoint, physicsFixedJointPrims,
+        CallReportFn(UsdPhysicsObjectType::FixedJoint, physicsFixedJointPrims,
             fixedJointDescs, reportFn, primPathsVector, userData);
-        CallReportFn(UsdPhysicsObjectType::eRevoluteJoint, 
+        CallReportFn(UsdPhysicsObjectType::RevoluteJoint, 
                      physicsRevoluteJointPrims,
             revoluteJointDescs, reportFn, primPathsVector, userData);
-        CallReportFn(UsdPhysicsObjectType::ePrismaticJoint, 
+        CallReportFn(UsdPhysicsObjectType::PrismaticJoint, 
                      physicsPrismaticJointPrims,
             prismaticJointDescs, reportFn, primPathsVector, userData);
-        CallReportFn(UsdPhysicsObjectType::eSphericalJoint, 
+        CallReportFn(UsdPhysicsObjectType::SphericalJoint, 
                      physicsSphericalJointPrims,
             sphericalJointDescs, reportFn, primPathsVector, userData);
-        CallReportFn(UsdPhysicsObjectType::eDistanceJoint, 
+        CallReportFn(UsdPhysicsObjectType::DistanceJoint, 
                      physicsDistanceJointPrims,
             distanceJointDescs, reportFn, primPathsVector, userData);
-        CallReportFn(UsdPhysicsObjectType::eD6Joint, physicsD6JointPrims, 
+        CallReportFn(UsdPhysicsObjectType::D6Joint, physicsD6JointPrims, 
                      jointDescs, reportFn, primPathsVector, userData);
-        CallReportFn(UsdPhysicsObjectType::eCustomJoint, 
+        CallReportFn(UsdPhysicsObjectType::CustomJoint, 
                      physicsCustomJointPrims, customJointDescs, reportFn, 
                      primPathsVector, userData);
     }

@@ -25,77 +25,80 @@ PXR_NAMESPACE_OPEN_SCOPE
 /// Sentinel value for flt max compare
 const float usdPhysicsSentinelLimit = 0.5e38f;
 
-/// \struct UsdPhysicsObjectType
+/// \class UsdPhysicsObjectType
 ///
 /// Physics object type structure for type enumeration
 ///
-struct UsdPhysicsObjectType
+class UsdPhysicsObjectType
 {
+public:
     enum Enum
     {
-        eUndefined,
+        Undefined,
 
-        eScene,
+        Scene,
 
-        eRigidBody,
+        RigidBody,
 
-        eSphereShape,
-        eCubeShape,
-        eCapsuleShape,
-        eCylinderShape,
-        eConeShape,
-        eMeshShape,
-        ePlaneShape,
-        eCustomShape,
-        eSpherePointsShape,
+        SphereShape,
+        CubeShape,
+        CapsuleShape,
+        CylinderShape,
+        ConeShape,
+        MeshShape,
+        PlaneShape,
+        CustomShape,
+        SpherePointsShape,
 
-        eFixedJoint,
-        eRevoluteJoint,
-        ePrismaticJoint,
-        eSphericalJoint,
-        eDistanceJoint,
-        eD6Joint,
-        eCustomJoint,
+        FixedJoint,
+        RevoluteJoint,
+        PrismaticJoint,
+        SphericalJoint,
+        DistanceJoint,
+        D6Joint,
+        CustomJoint,
 
-        eRigidBodyMaterial,
+        RigidBodyMaterial,
 
-        eArticulation,
+        Articulation,
 
-        eCollisionGroup,
+        CollisionGroup,
 
-        eLast,
+        Last,
     };
 };
 
-/// \struct UsdPhysicsAxis
+/// \class UsdPhysicsAxis
 ///
 /// Physics axis structure for type enumeration
 ///
-struct UsdPhysicsAxis
+class UsdPhysicsAxis
 {
+public:    
     enum Enum
     {
-        eX,
-        eY,
-        eZ
+        X,
+        Y,
+        Z
     };
 };
 
-/// \struct UsdPhysicsJointDOF
+/// \class UsdPhysicsJointDOF
 ///
 /// Physics joint degree of freedom structure for type enumeration
 ///
-struct UsdPhysicsJointDOF
+class UsdPhysicsJointDOF
 {
+public:    
     enum Enum
     {
-        eDistance,
-        eTransX,
-        eTransY,
-        eTransZ,
-        eRotX,
-        eRotY,
-        eRotZ
+        Distance,
+        TransX,
+        TransY,
+        TransZ,
+        RotX,
+        RotY,
+        RotZ
     };
 };
 
@@ -105,8 +108,8 @@ struct UsdPhysicsJointDOF
 ///
 struct UsdPhysicsObjectDesc
 {
-    UsdPhysicsObjectDesc() : 
-        type(UsdPhysicsObjectType::eUndefined), isValid(true)
+    UsdPhysicsObjectDesc(UsdPhysicsObjectType::Enum inType) : 
+        type(inType), isValid(true)
     {
     }
 
@@ -128,10 +131,9 @@ struct UsdPhysicsObjectDesc
 struct UsdPhysicsRigidBodyMaterialDesc : UsdPhysicsObjectDesc
 {
     UsdPhysicsRigidBodyMaterialDesc() : 
-        staticFriction(0.0f), dynamicFriction(0.0f), restitution(0.0f), 
+        UsdPhysicsObjectDesc(UsdPhysicsObjectType::RigidBodyMaterial), staticFriction(0.0f), dynamicFriction(0.0f), restitution(0.0f), 
         density(-1.0f)
     {
-        type = UsdPhysicsObjectType::eRigidBodyMaterial;
     }
 
     bool operator == (const UsdPhysicsRigidBodyMaterialDesc& /*desc*/) const
@@ -156,9 +158,8 @@ struct UsdPhysicsRigidBodyMaterialDesc : UsdPhysicsObjectDesc
 struct UsdPhysicsSceneDesc : UsdPhysicsObjectDesc
 {
     UsdPhysicsSceneDesc() : 
-        gravityDirection(0.0f, 0.0f, 0.0f), gravityMagnitude(-INFINITY)
-    {
-        type = UsdPhysicsObjectType::eScene;
+        UsdPhysicsObjectDesc(UsdPhysicsObjectType::Scene), gravityDirection(0.0f, 0.0f, 0.0f), gravityMagnitude(-INFINITY)
+    {        
     }
 
     bool operator == (const UsdPhysicsSceneDesc& /*desc*/) const
@@ -180,9 +181,9 @@ struct UsdPhysicsSceneDesc : UsdPhysicsObjectDesc
 ///
 struct UsdPhysicsCollisionGroupDesc : UsdPhysicsObjectDesc
 {
-    UsdPhysicsCollisionGroupDesc()
-    {
-        type = UsdPhysicsObjectType::eCollisionGroup;
+    UsdPhysicsCollisionGroupDesc():
+        UsdPhysicsObjectDesc(UsdPhysicsObjectType::CollisionGroup)
+    {        
     }
 
     bool operator == (const UsdPhysicsCollisionGroupDesc& /*desc*/) const
@@ -220,8 +221,8 @@ struct UsdPhysicsCollisionGroupDesc : UsdPhysicsObjectDesc
 ///
 struct UsdPhysicsShapeDesc : UsdPhysicsObjectDesc
 {
-    UsdPhysicsShapeDesc()
-        : localPos(0.0f, 0.0f, 0.0f), localRot(1.0f, 0.0f, 0.0f, 0.0f), 
+    UsdPhysicsShapeDesc(UsdPhysicsObjectType::Enum inType)
+        : UsdPhysicsObjectDesc(inType), localPos(0.0f, 0.0f, 0.0f), localRot(1.0f, 0.0f, 0.0f, 0.0f), 
         localScale(1.0f, 1.0f, 1.0f), collisionEnabled(true)
     {
     }
@@ -247,7 +248,7 @@ struct UsdPhysicsShapeDesc : UsdPhysicsObjectDesc
     }
 
 
-    /// Rigid body the collision shape belongs to, if not set its a static 
+    /// Rigid body the collision shape belongs to, if not set it's a static 
     /// collider
     SdfPath rigidBody;
     /// Local position of the shape relative to the body world pose
@@ -276,9 +277,9 @@ struct UsdPhysicsShapeDesc : UsdPhysicsObjectDesc
 ///
 struct UsdPhysicsSphereShapeDesc : UsdPhysicsShapeDesc
 {
-    UsdPhysicsSphereShapeDesc(float inRadius = 0.0f) : radius(inRadius)
-    {
-        type = UsdPhysicsObjectType::eSphereShape;
+    UsdPhysicsSphereShapeDesc(float inRadius = 0.0f) : 
+        UsdPhysicsShapeDesc(UsdPhysicsObjectType::SphereShape), radius(inRadius)
+    {        
     }
 
     bool operator == (const UsdPhysicsSphereShapeDesc& /*desc*/) const
@@ -297,10 +298,10 @@ struct UsdPhysicsSphereShapeDesc : UsdPhysicsShapeDesc
 struct UsdPhysicsCapsuleShapeDesc : UsdPhysicsShapeDesc
 {
     UsdPhysicsCapsuleShapeDesc(float inRadius = 0.0f, float half_height = 0.0f,
-        UsdPhysicsAxis::Enum cap_axis = UsdPhysicsAxis::eX)
-        : radius(inRadius), halfHeight(half_height), axis(cap_axis)
-    {
-        type = UsdPhysicsObjectType::eCapsuleShape;
+        UsdPhysicsAxis::Enum cap_axis = UsdPhysicsAxis::X)
+        : UsdPhysicsShapeDesc(UsdPhysicsObjectType::CapsuleShape), radius(inRadius), 
+        halfHeight(half_height), axis(cap_axis)
+    {        
     }
 
     bool operator == (const UsdPhysicsCapsuleShapeDesc& /*desc*/) const
@@ -323,10 +324,10 @@ struct UsdPhysicsCapsuleShapeDesc : UsdPhysicsShapeDesc
 struct UsdPhysicsCylinderShapeDesc : UsdPhysicsShapeDesc
 {
     UsdPhysicsCylinderShapeDesc(float inRadius = 0.0f, float half_height = 0.0f,
-        UsdPhysicsAxis::Enum cap_axis = UsdPhysicsAxis::eX)
-        : radius(inRadius), halfHeight(half_height), axis(cap_axis)
-    {
-        type = UsdPhysicsObjectType::eCylinderShape;
+        UsdPhysicsAxis::Enum cap_axis = UsdPhysicsAxis::X)
+        : UsdPhysicsShapeDesc(UsdPhysicsObjectType::CylinderShape), radius(inRadius), 
+        halfHeight(half_height), axis(cap_axis)
+    {        
     }
 
     bool operator == (const UsdPhysicsCylinderShapeDesc& /*desc*/) const
@@ -349,10 +350,10 @@ struct UsdPhysicsCylinderShapeDesc : UsdPhysicsShapeDesc
 struct UsdPhysicsConeShapeDesc : UsdPhysicsShapeDesc
 {
     UsdPhysicsConeShapeDesc(float inRadius = 0.0f, float half_height = 0.0f,
-        UsdPhysicsAxis::Enum cap_axis = UsdPhysicsAxis::eX)
-        : radius(inRadius), halfHeight(half_height), axis(cap_axis)
-    {
-        type = UsdPhysicsObjectType::eConeShape;
+        UsdPhysicsAxis::Enum cap_axis = UsdPhysicsAxis::X)
+        : UsdPhysicsShapeDesc(UsdPhysicsObjectType::ConeShape), radius(inRadius), 
+        halfHeight(half_height), axis(cap_axis)
+    {        
     }
 
     bool operator == (const UsdPhysicsConeShapeDesc& /*desc*/) const
@@ -374,11 +375,11 @@ struct UsdPhysicsConeShapeDesc : UsdPhysicsShapeDesc
 ///
 struct UsdPhysicsPlaneShapeDesc : UsdPhysicsShapeDesc
 {
-    UsdPhysicsPlaneShapeDesc(UsdPhysicsAxis::Enum up_axis = UsdPhysicsAxis::eX)
-        : axis(up_axis)
-    {
-        type = UsdPhysicsObjectType::ePlaneShape;
+    UsdPhysicsPlaneShapeDesc(UsdPhysicsAxis::Enum up_axis = UsdPhysicsAxis::X)
+        : UsdPhysicsShapeDesc(UsdPhysicsObjectType::PlaneShape), axis(up_axis)
+    {        
     }
+
     bool operator == (const UsdPhysicsPlaneShapeDesc& /*desc*/) const
     {
         return false;
@@ -396,9 +397,10 @@ struct UsdPhysicsPlaneShapeDesc : UsdPhysicsShapeDesc
 struct UsdPhysicsCustomShapeDesc : UsdPhysicsShapeDesc
 {
     UsdPhysicsCustomShapeDesc()
-    {
-        type = UsdPhysicsObjectType::eCustomShape;
+    : UsdPhysicsShapeDesc(UsdPhysicsObjectType::CustomShape)
+    {        
     }
+
     bool operator == (const UsdPhysicsCustomShapeDesc& /*desc*/) const
     {
         return false;
@@ -415,10 +417,10 @@ struct UsdPhysicsCustomShapeDesc : UsdPhysicsShapeDesc
 struct UsdPhysicsCubeShapeDesc : UsdPhysicsShapeDesc
 {
     UsdPhysicsCubeShapeDesc(const GfVec3f& inHalfExtents = GfVec3f(1.0f))
-        : halfExtents(inHalfExtents)
+        : UsdPhysicsShapeDesc(UsdPhysicsObjectType::CubeShape), halfExtents(inHalfExtents)
     {
-        type = UsdPhysicsObjectType::eCubeShape;
     }
+
     bool operator == (const UsdPhysicsCubeShapeDesc& /*desc*/) const
     {
         return false;
@@ -435,10 +437,11 @@ struct UsdPhysicsCubeShapeDesc : UsdPhysicsShapeDesc
 struct UsdPhysicsMeshShapeDesc : UsdPhysicsShapeDesc
 {
     UsdPhysicsMeshShapeDesc()
-        : meshScale(1.0f, 1.0f, 1.0f), doubleSided(false)
+        : UsdPhysicsShapeDesc(UsdPhysicsObjectType::MeshShape), meshScale(1.0f, 1.0f, 1.0f), 
+        doubleSided(false)
     {
-        type = UsdPhysicsObjectType::eMeshShape;
     }
+
     bool operator == (const UsdPhysicsMeshShapeDesc& /*desc*/) const
     {
         return false;
@@ -469,7 +472,10 @@ struct UsdPhysicsSpherePoint
         return false;
     }
 
-    GfVec3f center;
+    /// Sphere point center
+    GfVec3f center; 
+
+    /// Sphere point radius
     float radius;
 };
 
@@ -483,9 +489,10 @@ struct UsdPhysicsSpherePoint
 struct UsdPhysicsSpherePointsShapeDesc : UsdPhysicsShapeDesc
 {
     UsdPhysicsSpherePointsShapeDesc()
+    : UsdPhysicsShapeDesc(UsdPhysicsObjectType::SpherePointsShape)
     {
-        type = UsdPhysicsObjectType::eSpherePointsShape;
     }
+
     bool operator == (const UsdPhysicsSpherePointsShapeDesc& /*desc*/) const
     {
         return false;
@@ -502,12 +509,12 @@ struct UsdPhysicsSpherePointsShapeDesc : UsdPhysicsShapeDesc
 struct UsdPhysicsRigidBodyDesc : UsdPhysicsObjectDesc
 {
     UsdPhysicsRigidBodyDesc()
-        : position(0.0f, 0.0f, 0.0f), rotation(1.0f, 0.0f, 0.0f, 0.0f),
+        : UsdPhysicsObjectDesc(UsdPhysicsObjectType::RigidBody), position(0.0f, 0.0f, 0.0f), 
+        rotation(1.0f, 0.0f, 0.0f, 0.0f),
         scale(1.0f, 1.0f, 1.0f), rigidBodyEnabled(true), kinematicBody(false),
         startsAsleep(false), linearVelocity(0.0f, 0.0f, 0.0f), 
         angularVelocity(0.0f, 0.0f, 0.0f)
     {
-        type = UsdPhysicsObjectType::eRigidBody;
     }
 
     bool operator == (const UsdPhysicsRigidBodyDesc& /*desc*/) const
@@ -543,7 +550,7 @@ struct UsdPhysicsRigidBodyDesc : UsdPhysicsObjectDesc
     /// Rigid body scale
     GfVec3f scale;
 
-    /// Defines whether body is enabled or not, if not enabled its a static body
+    /// Defines whether body is enabled or not, if not enabled it's a static body
     bool rigidBodyEnabled;
     /// Defines if the body is kinematic or not
     bool kinematicBody;
@@ -633,8 +640,8 @@ struct UsdPhysicsJointDrive
 struct UsdPhysicsArticulationDesc : UsdPhysicsObjectDesc
 {
     UsdPhysicsArticulationDesc()
+    : UsdPhysicsObjectDesc(UsdPhysicsObjectType::Articulation)
     {
-        type = UsdPhysicsObjectType::eArticulation;
     }
 
     bool operator == (const UsdPhysicsArticulationDesc& /*desc*/) const
@@ -686,8 +693,8 @@ using JointDrives = std::vector<
 ///
 struct UsdPhysicsJointDesc : public UsdPhysicsObjectDesc
 {
-    UsdPhysicsJointDesc()
-        : localPose0Position(0.0f, 0.0f, 0.0f), 
+    UsdPhysicsJointDesc(UsdPhysicsObjectType::Enum inType)
+        : UsdPhysicsObjectDesc(inType), localPose0Position(0.0f, 0.0f, 0.0f), 
         localPose0Orientation(1.0f, 0.0f, 0.0f, 0.0f), 
         localPose1Position(0.0f, 0.0f, 0.0f), 
         localPose1Orientation(1.0f, 0.0f, 0.0f, 0.0f), jointEnabled(true),
@@ -725,7 +732,7 @@ struct UsdPhysicsJointDesc : public UsdPhysicsObjectDesc
     float breakForce;
     /// Joint break torque
     float breakTorque;
-    /// Defines if joint belongs to an articulation or if its a maximum
+    /// Defines if joint belongs to an articulation or if it's a maximum
     /// coordinate joint
     bool excludeFromArticulation;
     /// Defines if collision is enabled or disabled between the jointed bodies
@@ -739,8 +746,8 @@ struct UsdPhysicsJointDesc : public UsdPhysicsObjectDesc
 struct UsdPhysicsCustomJointDesc : public UsdPhysicsJointDesc
 {
     UsdPhysicsCustomJointDesc()
+    : UsdPhysicsJointDesc(UsdPhysicsObjectType::CustomJoint)
     {
-        type = UsdPhysicsObjectType::eCustomJoint;
     }
 
     bool operator == (const UsdPhysicsCustomJointDesc& /*desc*/) const
@@ -757,8 +764,8 @@ struct UsdPhysicsCustomJointDesc : public UsdPhysicsJointDesc
 struct UsdPhysicsFixedJointDesc : public UsdPhysicsJointDesc
 {
     UsdPhysicsFixedJointDesc()
+    : UsdPhysicsJointDesc(UsdPhysicsObjectType::FixedJoint)
     {
-        type = UsdPhysicsObjectType::eFixedJoint;
     }
 
     bool operator == (const UsdPhysicsFixedJointDesc& /*desc*/) const
@@ -774,8 +781,8 @@ struct UsdPhysicsFixedJointDesc : public UsdPhysicsJointDesc
 struct UsdPhysicsD6JointDesc : public UsdPhysicsJointDesc
 {
     UsdPhysicsD6JointDesc()
+    : UsdPhysicsJointDesc(UsdPhysicsObjectType::D6Joint)
     {
-        type = UsdPhysicsObjectType::eD6Joint;
     }
 
     bool operator == (const UsdPhysicsD6JointDesc& /*desc*/) const
@@ -783,7 +790,7 @@ struct UsdPhysicsD6JointDesc : public UsdPhysicsJointDesc
         return false;
     }
 
-    /// List of joint limits
+    /// List of joint limit's
     JointLimits jointLimits;
     /// List of joint drives
     JointDrives jointDrives;
@@ -795,9 +802,9 @@ struct UsdPhysicsD6JointDesc : public UsdPhysicsJointDesc
 ///
 struct UsdPhysicsPrismaticJointDesc : public UsdPhysicsJointDesc
 {
-    UsdPhysicsPrismaticJointDesc() : axis(UsdPhysicsAxis::eX)
+    UsdPhysicsPrismaticJointDesc()
+    : UsdPhysicsJointDesc(UsdPhysicsObjectType::PrismaticJoint), axis(UsdPhysicsAxis::X)
     {
-        type = UsdPhysicsObjectType::ePrismaticJoint;
     }
 
     bool operator == (const UsdPhysicsPrismaticJointDesc& /*desc*/) const
@@ -819,9 +826,9 @@ struct UsdPhysicsPrismaticJointDesc : public UsdPhysicsJointDesc
 ///
 struct UsdPhysicsSphericalJointDesc : public UsdPhysicsJointDesc
 {
-    UsdPhysicsSphericalJointDesc() : axis(UsdPhysicsAxis::eX)
+    UsdPhysicsSphericalJointDesc()
+    : UsdPhysicsJointDesc(UsdPhysicsObjectType::SphericalJoint), axis(UsdPhysicsAxis::X)
     {
-        type = UsdPhysicsObjectType::eSphericalJoint;
     }
 
     bool operator == (const UsdPhysicsSphericalJointDesc& /*desc*/) const
@@ -841,9 +848,9 @@ struct UsdPhysicsSphericalJointDesc : public UsdPhysicsJointDesc
 ///
 struct UsdPhysicsRevoluteJointDesc : public UsdPhysicsJointDesc
 {
-    UsdPhysicsRevoluteJointDesc() : axis(UsdPhysicsAxis::eX)
+    UsdPhysicsRevoluteJointDesc()
+    : UsdPhysicsJointDesc(UsdPhysicsObjectType::RevoluteJoint), axis(UsdPhysicsAxis::X)
     {
-        type = UsdPhysicsObjectType::eRevoluteJoint;
     }
 
     bool operator == (const UsdPhysicsRevoluteJointDesc& /*desc*/) const
@@ -865,9 +872,9 @@ struct UsdPhysicsRevoluteJointDesc : public UsdPhysicsJointDesc
 ///
 struct UsdPhysicsDistanceJointDesc : public UsdPhysicsJointDesc
 {
-    UsdPhysicsDistanceJointDesc() : minEnabled(false), maxEnabled(false)
+    UsdPhysicsDistanceJointDesc() 
+    : UsdPhysicsJointDesc(UsdPhysicsObjectType::DistanceJoint), minEnabled(false), maxEnabled(false)
     {
-        type = UsdPhysicsObjectType::eDistanceJoint;
     }
 
     bool operator == (const UsdPhysicsDistanceJointDesc& /*desc*/) const
