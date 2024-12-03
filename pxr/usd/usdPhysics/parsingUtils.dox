@@ -1,9 +1,6 @@
 /*!
 
 \page usdPhysics_page_front UsdPhysics : USD Physics Parsing Utils
-\if ( PIXAR_MFB_BUILD )
-\mainpage UsdPhysics : USD Physics Parsing Utils
-\endif
 
 <b>USD Physics Parsing Utils Overview.</b>
 
