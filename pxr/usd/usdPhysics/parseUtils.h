@@ -53,21 +53,36 @@ struct CustomUsdPhysicsTokens
     std::vector<TfToken> instancerTokens;
 };
 
-/// Load USD physics from a given range
+/// Load USD physics from a given list of paths
+/// 
+/// 
+/// 
+/// See the parsing utils documentation for more details.
 ///
-/// \param[in] stage      Stage to parse
-/// \param[in] range      USDRange to parse
+/// \param[in] stage      Stage to parse.
+/// \param[in] includePaths The vector of SdfPaths that are used to construct
+///                       UsdPrimRange for traversals. For each path a UsdPrim
+///                       is found on the stage and UsdRange traversal is 
+///                       constructed from it. All the traversed UsdPrims are
+///                       parsed and physics descriptors are constructed and
+///                       reported through the report function.
 /// \param[in] reportFn   Report function that gets parsed USD physics data
-/// \param[in] userData   User data passed to report function
+/// \param[in] userData   User data passed to report function, this can be
+///                       arbitrary data structure, user data are just passed
+///                       to the report function.
+/// \param[in] excludePaths The vector of SdfPaths that are used to prune
+///                       UsdPrims from the parsing UsdPrimRange traversals
+///                       constructed from the include paths.
 /// \param[in] customPhysicsTokens Custom tokens to be reported by the parsing
 /// \param[in] simulationOwners List of simulation owners that should be parsed, 
 ///                       adding SdfPath() indicates that objects without a 
 ///                       simulation owner should be parsed too.
 /// \return True if load was successful
 USDPHYSICS_API bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
-    ParsePrimIteratorBase& range,
+    const std::vector<SdfPath>& includePaths,
     UsdPhysicsReportFn reportFn,
     void* userData,
+    const std::vector<SdfPath>* excludePaths = nullptr,
     const CustomUsdPhysicsTokens* customPhysicsTokens = nullptr,
     const std::vector<SdfPath>* simulationOwners = nullptr);
 

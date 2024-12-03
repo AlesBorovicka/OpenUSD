@@ -397,7 +397,9 @@ std::string GetString(const object& po)
 }
 
 dict _LoadUsdPhysicsFromRange(UsdStageWeakPtr stage,
-    ParsePrimIteratorBase& range, const _CustomUsdPhysicsTokens& customTokens,
+    const std::vector<SdfPath>& includePaths, 
+    const std::vector<SdfPath>& excludePaths,
+    const _CustomUsdPhysicsTokens& customTokens,
     const std::vector<SdfPath>& simulationOwners)
 {
     CustomUsdPhysicsTokens parsingCustomTokens;
@@ -426,8 +428,9 @@ dict _LoadUsdPhysicsFromRange(UsdStageWeakPtr stage,
     }
 
     gMarshalCallback.clear();
-    const bool ret_val = LoadUsdPhysicsFromRange(stage, range,
+    const bool ret_val = LoadUsdPhysicsFromRange(stage, includePaths,
         ReportPhysicsObjectsFn, &gMarshalCallback,
+        !excludePaths.empty() ? &excludePaths : nullptr,
         customTokensValid ? &parsingCustomTokens : nullptr,
         !simulationOwners.empty() ? &simulationOwners : nullptr);
     dict retDict;
@@ -1370,7 +1373,7 @@ void wrapParseUtils()
         .def(init<UsdPrimRange, SdfPathVector>());
 
     def("LoadUsdPhysicsFromRange", _LoadUsdPhysicsFromRange,
-        (args("stage"), args("range"), args("customTokens") = 
+        (args("stage"), args("includePaths"), args("excludePaths") = std::vector<SdfPath>(), args("customTokens") =
             _CustomUsdPhysicsTokens(), args("simulationOwners") = 
         std::vector<SdfPath>()));
 }

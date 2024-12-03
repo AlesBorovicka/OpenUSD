@@ -27,8 +27,7 @@ pxr_library(usdPhysics
         api.h
         massProperties.h
         parseUtils.h
-        parseDesc.h
-        parsePrimIterator.h
+        parseDesc.h        
 
     PYTHON_CPPFILES
         moduleDeps.cpp

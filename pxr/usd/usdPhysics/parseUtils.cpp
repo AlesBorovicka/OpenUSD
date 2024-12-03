@@ -2497,9 +2497,10 @@ void FinalizeArticulations(const UsdStageWeakPtr stage,
 }
 
 bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
-    ParsePrimIteratorBase& primIterator,
+    const std::vector<SdfPath>& includePaths,
     UsdPhysicsReportFn reportFn,
     void* userData,
+    const std::vector<SdfPath>* excludePaths,
     const CustomUsdPhysicsTokens* customPhysicsTokens,
     const std::vector<SdfPath>* simulationOwners)
 {
@@ -2517,6 +2518,11 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
         return false;
     }
 
+    if (includePaths.empty())
+    {
+        TF_CODING_ERROR("No include path provided, nothing to parse.");
+        return false;
+    }
 
     std::vector<UsdPrim> scenePrims;
     std::vector<UsdPrim> collisionGroupPrims;
@@ -2533,9 +2539,14 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
     std::vector<UsdPrim> collisionPrims;
     std::vector<UsdPrim> rigidBodyPrims;
 
-    // parse for scene first, get the descriptors, report all prims
-    // the descriptors are not complete yet
-    primIterator.Reset();
+    std::unordered_set<SdfPath, SdfPath::Hash> excludePathsSet;
+    if (excludePaths && !excludePaths->empty())
+    {
+        for (const SdfPath& p : *excludePaths)
+        {
+            excludePathsSet.insert(p);
+        }
+    }
 
     static const TfToken gRigidBodyAPIToken("PhysicsRigidBodyAPI");
     static const TfToken gCollisionAPIToken("PhysicsCollisionAPI");
@@ -2560,152 +2571,162 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
         }
     }
 
-    while (!primIterator.AtEnd())
+    for (const SdfPath& includePath : includePaths)
     {
-        const UsdPrim& prim = *primIterator.GetCurrent();
-        if (!prim)
-        {
-            primIterator.PruneChildren();
-            primIterator.Next();
-            continue;
-        }
+        const UsdPrim includePrim = stage->GetPrimAtPath(includePath);
+        UsdPrimRange includePrimRange(includePrim, UsdTraverseInstanceProxies());
 
-        const SdfPath primPath = prim.GetPrimPath();
-        const UsdPrimTypeInfo& typeInfo = prim.GetPrimTypeInfo();
+        for (UsdPrimRange::const_iterator iter = includePrimRange.begin(); iter != includePrimRange.end(); ++iter)
+        {
+            const UsdPrim& prim = *iter;
+            if (!prim)
+            {
+                iter.PruneChildren();
+                continue;
+            }
 
-        uint64_t apiFlags = 0;
-        const TfTokenVector& apis = 
-            prim.GetPrimTypeInfo().GetAppliedAPISchemas();
-        for (const TfToken& token : apis)
-        {
-            if (token == gArticulationRootAPIToken)
+            if (!excludePathsSet.empty() && excludePathsSet.find(prim.GetPrimPath()) != excludePathsSet.end())
             {
-                apiFlags |= SchemaAPIFlag::eArticulationRootAPI;
+                iter.PruneChildren();
+                continue;
             }
-            if (token == gCollisionAPIToken)
-            {
-                apiFlags |= SchemaAPIFlag::eCollisionAPI;
-            }
-            if (token == gRigidBodyAPIToken)
-            {
-                apiFlags |= SchemaAPIFlag::eRigidBodyAPI;
-            }
-            if (!apiFlags && token == gMaterialAPIToken)
-            {
-                apiFlags |= SchemaAPIFlag::eMaterialAPI;
-            }
-        }
 
-        if (typeInfo.GetSchemaType().IsA<UsdGeomPointInstancer>())
-        {
-            // Skip the subtree for point instancers, those have to be 
-            // traversed per prototype
-            primIterator.PruneChildren(); 
-        }
-        else if (customPhysicsTokens && 
-            !customPhysicsTokens->instancerTokens.empty())
-        {
-            for (const TfToken& instToken : 
-                    customPhysicsTokens->instancerTokens)
+            const SdfPath primPath = prim.GetPrimPath();
+            const UsdPrimTypeInfo& typeInfo = prim.GetPrimTypeInfo();
+
+            uint64_t apiFlags = 0;
+            const TfTokenVector& apis =
+                prim.GetPrimTypeInfo().GetAppliedAPISchemas();
+            for (const TfToken& token : apis)
             {
-                if (instToken == typeInfo.GetTypeName())
+                if (token == gArticulationRootAPIToken)
                 {
-                    // Skip the subtree for custom 
-                    // instancers, those have to be traversed per prototype
-                    primIterator.PruneChildren(); 
-                    break;
+                    apiFlags |= SchemaAPIFlag::eArticulationRootAPI;
+                }
+                if (token == gCollisionAPIToken)
+                {
+                    apiFlags |= SchemaAPIFlag::eCollisionAPI;
+                }
+                if (token == gRigidBodyAPIToken)
+                {
+                    apiFlags |= SchemaAPIFlag::eRigidBodyAPI;
+                }
+                if (!apiFlags && token == gMaterialAPIToken)
+                {
+                    apiFlags |= SchemaAPIFlag::eMaterialAPI;
                 }
             }
-        }
 
-        if (typeInfo.GetSchemaType().IsA<UsdPhysicsScene>())
-        {
-            scenePrims.push_back(prim);
-        }
-        else if (typeInfo.GetSchemaType().IsA<UsdPhysicsCollisionGroup>())
-        {
-            collisionGroupPrims.push_back(prim);
-        }
-        else if (apiFlags & SchemaAPIFlag::eMaterialAPI)
-        {
-            materialPrims.push_back(prim);
-        }
-        else if (typeInfo.GetSchemaType().IsA<UsdPhysicsJoint>())
-        {
-            if (typeInfo.GetSchemaType().IsA<UsdPhysicsFixedJoint>())
+            if (typeInfo.GetSchemaType().IsA<UsdGeomPointInstancer>())
             {
-                physicsFixedJointPrims.push_back(prim);
+                // Skip the subtree for point instancers, those have to be 
+                // traversed per prototype
+                iter.PruneChildren();
             }
-            else if (typeInfo.GetSchemaType().IsA<UsdPhysicsRevoluteJoint>())
+            else if (customPhysicsTokens &&
+                !customPhysicsTokens->instancerTokens.empty())
             {
-                physicsRevoluteJointPrims.push_back(prim);
-            }
-            else if (typeInfo.GetSchemaType().IsA<UsdPhysicsPrismaticJoint>())
-            {
-                physicsPrismaticJointPrims.push_back(prim);
-            }
-            else if (typeInfo.GetSchemaType().IsA<UsdPhysicsSphericalJoint>())
-            {
-                physicsSphericalJointPrims.push_back(prim);
-            }
-            else if (typeInfo.GetSchemaType().IsA<UsdPhysicsDistanceJoint>())
-            {
-                physicsDistanceJointPrims.push_back(prim);
-            }
-            else
-            {
-                bool customJoint = false;
-                if (customPhysicsTokens)
+                for (const TfToken& instToken :
+                    customPhysicsTokens->instancerTokens)
                 {
-                    const TfToken& primType = typeInfo.GetTypeName();
-                    for (size_t i = 0; 
-                            i < customPhysicsTokens->jointTokens.size(); i++)
+                    if (instToken == typeInfo.GetTypeName())
                     {
-                        if (primType == customPhysicsTokens->jointTokens[i])
-                        {
-                            customJoint = true;
-                            break;
-                        }
+                        // Skip the subtree for custom 
+                        // instancers, those have to be traversed per prototype
+                        iter.PruneChildren();
+                        break;
                     }
                 }
+            }
 
-                if (customJoint)
+            if (typeInfo.GetSchemaType().IsA<UsdPhysicsScene>())
+            {
+                scenePrims.push_back(prim);
+            }
+            else if (typeInfo.GetSchemaType().IsA<UsdPhysicsCollisionGroup>())
+            {
+                collisionGroupPrims.push_back(prim);
+            }
+            else if (apiFlags & SchemaAPIFlag::eMaterialAPI)
+            {
+                materialPrims.push_back(prim);
+            }
+            else if (typeInfo.GetSchemaType().IsA<UsdPhysicsJoint>())
+            {
+                if (typeInfo.GetSchemaType().IsA<UsdPhysicsFixedJoint>())
                 {
-                    physicsCustomJointPrims.push_back(prim);
+                    physicsFixedJointPrims.push_back(prim);
+                }
+                else if (typeInfo.GetSchemaType().IsA<UsdPhysicsRevoluteJoint>())
+                {
+                    physicsRevoluteJointPrims.push_back(prim);
+                }
+                else if (typeInfo.GetSchemaType().IsA<UsdPhysicsPrismaticJoint>())
+                {
+                    physicsPrismaticJointPrims.push_back(prim);
+                }
+                else if (typeInfo.GetSchemaType().IsA<UsdPhysicsSphericalJoint>())
+                {
+                    physicsSphericalJointPrims.push_back(prim);
+                }
+                else if (typeInfo.GetSchemaType().IsA<UsdPhysicsDistanceJoint>())
+                {
+                    physicsDistanceJointPrims.push_back(prim);
                 }
                 else
                 {
-                    physicsD6JointPrims.push_back(prim);
+                    bool customJoint = false;
+                    if (customPhysicsTokens)
+                    {
+                        const TfToken& primType = typeInfo.GetTypeName();
+                        for (size_t i = 0;
+                            i < customPhysicsTokens->jointTokens.size(); i++)
+                        {
+                            if (primType == customPhysicsTokens->jointTokens[i])
+                            {
+                                customJoint = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (customJoint)
+                    {
+                        physicsCustomJointPrims.push_back(prim);
+                    }
+                    else
+                    {
+                        physicsD6JointPrims.push_back(prim);
+                    }
+                }
+
+
+                // can be articulation definition
+                if (apiFlags & SchemaAPIFlag::eArticulationRootAPI)
+                {
+                    articulationPrims.push_back(prim);
+                    articulationPathsSet.insert(prim.GetPrimPath());
                 }
             }
-
-
-            // can be articulation definition
-            if (apiFlags & SchemaAPIFlag::eArticulationRootAPI)
+            else
             {
-                articulationPrims.push_back(prim);
-                articulationPathsSet.insert(prim.GetPrimPath());
+                if (apiFlags & SchemaAPIFlag::eCollisionAPI)
+                {
+                    collisionPrims.push_back(prim);
+                }
+                if (apiFlags & SchemaAPIFlag::eRigidBodyAPI)
+                {
+                    rigidBodyPrims.push_back(prim);
+                }
+                if (apiFlags & SchemaAPIFlag::eArticulationRootAPI)
+                {
+                    articulationPrims.push_back(prim);
+                    articulationPathsSet.insert(prim.GetPrimPath());
+                }
             }
         }
-        else
-        {
-            if (apiFlags & SchemaAPIFlag::eCollisionAPI)
-            {
-                collisionPrims.push_back(prim);
-            }
-            if (apiFlags & SchemaAPIFlag::eRigidBodyAPI)
-            {
-                rigidBodyPrims.push_back(prim);
-            }
-            if (apiFlags & SchemaAPIFlag::eArticulationRootAPI)
-            {
-                articulationPrims.push_back(prim);
-                articulationPathsSet.insert(prim.GetPrimPath());
-            }
-        }
-
-        primIterator.Next();
     }
+
 
     // process parsing
     // 

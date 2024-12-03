@@ -15,7 +15,7 @@ When the UsdPhysics schema is applied to the stage, processing the stage UsdPrim
 and creating a consistent physics representation can be challenging, especially
 when dealing with different simulators. The UsdPhysics Parsing Utilities are
 designed to help achieve a consistent physics representation as defined in 
-the USD stage. The stage, or generally a set of ranges, is parsed, and the 
+the USD stage. The stage, or generally a vector of paths, is parsed, and the 
 function returns a callback or dictionary with parsed physics descriptors. 
 Additionally, it can leverage the concept of simulation owners to partition the 
 stage for multiple simulation engines.
@@ -33,12 +33,10 @@ The parsing utility function takes several input parameters that need
 to be described:
 
 \li The stage to be parsed.
-\li Range of the UsdPrims to be parsed. Note that the range is not a standard
-UsdPrimRange, but rather a custom physics range, that can be constructed either
-on a full stage or on a map of primitive hierarchies. It is important that the
-parsing reports full information of all completely new added prims, not just one
-subtree. This is important for articulation processing for example. Additionally
-this gives the option to define own traversal rules if needed.
+\li Include paths vector, this vector define what all paths will be included 
+for parsing. The parsing will construct a UsdPrimRange from each UsdPrim found on 
+the given paths (the UsdPrimRange will traverse instance proxies). Its possible
+to exclude some paths through an exclude vector, see exclude path vector parameter.
 \li Report callback function that reports the descriptors back to the calling 
 code. The report function returns an array of the same descriptors to be 
 processed efficiently. Note that in python instead of a callback function all 
@@ -46,6 +44,8 @@ the descriptors are returned in a dictionary, where the key is the descriptor
 type and the value is a tuple of UsdPrim paths array and descriptors array.
 \li User data can be provided, these are then sent to the callback function, the 
 user data is not passed in the python version.
+\li Optional exclude paths vector, this vector defines what UsdPrims are pruned 
+from the UsdPrimRange traversal done during parsing.
 \li Optional custom physics tokens. There can be multiple optional custom 
 physics tokens defined.
 The custom tokens can hold three arrays of tokens that define a custom behavior. 
@@ -196,7 +196,7 @@ should not collide with. Note that this can be an arbitrary path in the USD
 hierarchy. It's up to the implementation to check what objects are created under 
 the hierarchy.
 \li List of collision groups this collision belongs to, note that only collision 
-groups that are part of the current parsing range are checked for a scoped 
+groups that are part of the current parsing include paths are checked for a scoped 
 parse, this needs to be checked for already existing groups reported by full parse.
 \li Boolean to specify whether collision is enabled or disabled, this can be 
 used to create objects in physics and then avoid runtime creation on the objects 
