@@ -54,6 +54,8 @@
 
 PXR_NAMESPACE_OPEN_SCOPE
 
+
+// Gather the filtered pairs from UsdPhysicsFilteredPairsAPI if applied to a prim
 void ParseFilteredPairs(const UsdPrim& usdPrim, SdfPathVector* outFilteredPairs)
 {
     UsdPhysicsFilteredPairsAPI filteredPairsAPI =
@@ -66,6 +68,8 @@ void ParseFilteredPairs(const UsdPrim& usdPrim, SdfPathVector* outFilteredPairs)
     }
 }
 
+
+// Parse base descriptor for given UsdPhysicsArticulationRootAPI
 bool ParseArticulationDesc(const UsdPhysicsArticulationRootAPI& articulationAPI,
     UsdPhysicsArticulationDesc* outArticulationDesc)
 {
@@ -85,12 +89,16 @@ bool ParseArticulationDesc(const UsdPhysicsArticulationRootAPI& articulationAPI,
     return true;
 }
 
+
+// Get collision type for given prim, collision type is determined based on
+// the UsdGeom type.
 UsdPhysicsObjectType::Enum GetCollisionType(const UsdPrim& prim,
     const std::vector<TfToken>* customTokens, TfToken* customeGeometryToken)
 {
     UsdPhysicsObjectType::Enum retVal = UsdPhysicsObjectType::Undefined;
 
-    // custom shape handling
+    // Custom shape handling, custom shape can be defined by the user
+    // we need to check whether a custom collisionAPI or type is on a prim
     if (customTokens)
     {
         const TfTokenVector& apis = 
@@ -104,7 +112,8 @@ UsdPhysicsObjectType::Enum GetCollisionType(const UsdPrim& prim,
                 if (apis[j] == (*customTokens)[i])
                 {
                     retVal = UsdPhysicsObjectType::CustomShape;
-                    if (customeGeometryToken) {
+                    if (customeGeometryToken) 
+                    {
                         *customeGeometryToken = apis[j];
                     }
                     break;
@@ -117,7 +126,8 @@ UsdPhysicsObjectType::Enum GetCollisionType(const UsdPrim& prim,
             if (primType == (*customTokens)[i])
             {
                 retVal = UsdPhysicsObjectType::CustomShape;
-                if (customeGeometryToken) {
+                if (customeGeometryToken) 
+                {
                     *customeGeometryToken = primType;
                 }
                 break;
@@ -125,16 +135,14 @@ UsdPhysicsObjectType::Enum GetCollisionType(const UsdPrim& prim,
         }
     }
 
-    if (retVal == UsdPhysicsObjectType::CustomShape) {
+    if (retVal == UsdPhysicsObjectType::CustomShape) 
+    {
         return retVal;
     }
 
-    // geomgprim that belongs to that collision
+    // geomgprim that belongs to that collisionm define type based on that
     if (prim.IsA<UsdGeomGprim>())
     {
-        // If the primitive is a UsdGeomPoints *and* it has a widths attribute
-        // corresponding to the positions attribute, then we treat it as an
-        // array of spheres corresponding to the 'UsdPhysicsSpherePointsShapeDesc'
         if (prim.IsA<UsdGeomMesh>())
         {
             retVal = UsdPhysicsObjectType::MeshShape;
@@ -172,21 +180,7 @@ UsdPhysicsObjectType::Enum GetCollisionType(const UsdPrim& prim,
     return retVal;
 }
 
-const double tolerance = 1e-4;
-
-void CheckNonUniformScale(const GfVec3d& scale, const SdfPath& primPath)
-{
-    if (abs(scale[0] - scale[1]) > tolerance || 
-        abs(scale[0] - scale[2]) > tolerance ||
-        abs(scale[2] - scale[1]) > tolerance)
-    {
-        TF_DIAGNOSTIC_WARNING("Non-uniform scale may result in a non matching "
-                              "collision representation on prim : %s", 
-                              primPath.GetText());
-    }
-}
-
-
+// Gather material binding, where the expected puporse token is "physics"
 SdfPath GetMaterialBinding(const UsdPrim& usdPrim)
 {
     SdfPath materialPath = SdfPath();
@@ -207,26 +201,10 @@ SdfPath GetMaterialBinding(const UsdPrim& usdPrim)
     return materialPath;
 }
 
-static void ParseColFilteredPairs(const UsdPrim& usdPrim, 
-                                  SdfPathVector* outFilteredPairs)
-{
-    UsdPhysicsFilteredPairsAPI filteredPairsAPI =
-        UsdPhysicsFilteredPairsAPI::Get(usdPrim.GetStage(), 
-                                        usdPrim.GetPrimPath());
-    if (outFilteredPairs && filteredPairsAPI && filteredPairsAPI.GetFilteredPairsRel())
-    {
-        filteredPairsAPI.GetFilteredPairsRel().GetTargets(outFilteredPairs);
-    }
-}
-
-void FinalizeDesc(const UsdPhysicsCollisionAPI& colAPI, 
+// Finalize collision descriptor
+void FinalizeCollisionDesc(const UsdPhysicsCollisionAPI& colAPI, 
                   UsdPhysicsShapeDesc* outDesc)
 {
-    if (!outDesc)
-    {
-        return;
-    }
-
     // set the collider material as last set SdfPath() anyway, this would 
     // indicate default material should be used, this is required for trimesh 
     // subset materials as not always all faces are covered with a subset 
@@ -250,7 +228,7 @@ void FinalizeDesc(const UsdPhysicsCollisionAPI& colAPI,
         outDesc->materials.push_back(SdfPath());
     }
 
-    ParseColFilteredPairs(colAPI.GetPrim(), &outDesc->filteredCollisions);
+    ParseFilteredPairs(colAPI.GetPrim(), &outDesc->filteredCollisions);
     colAPI.GetCollisionEnabledAttr().Get(&outDesc->collisionEnabled);
     const UsdRelationship ownerRel = colAPI.GetSimulationOwnerRel();
     if (ownerRel)
@@ -259,7 +237,7 @@ void FinalizeDesc(const UsdPhysicsCollisionAPI& colAPI,
     }
 }
 
-
+// Parse sphere shape desc
 bool ParseSphereShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
     UsdPhysicsSphereShapeDesc* outSphereShapeDesc)
 {
@@ -277,10 +255,6 @@ bool ParseSphereShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
             // Check scale, its part of the collision size
             {
                 const GfVec3d sc = tr.GetScale();
-                // as we dont support scale in physics and scale can be non
-                // uniform we pick the largest scale value as the sphere radius
-                // base
-                CheckNonUniformScale(sc, usdPrim.GetPrimPath());
                 radius = fmaxf(fmaxf(fabsf(float(sc[1])), fabsf(float(sc[0]))),
                     fabsf(float(sc[2])));
             }
@@ -296,7 +270,7 @@ bool ParseSphereShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
             outSphereShapeDesc->radius = fabsf(radius);
             outSphereShapeDesc->primPath = collisionAPI.GetPrim().GetPrimPath();
 
-            FinalizeDesc(collisionAPI, outSphereShapeDesc);
+            FinalizeCollisionDesc(collisionAPI, outSphereShapeDesc);
         }
         else
         {
@@ -314,6 +288,7 @@ bool ParseSphereShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
     return true;
 }
 
+// Parse cube shape desc
 bool ParseCubeShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
     UsdPhysicsCubeShapeDesc* outCubeShapeDesc)
 {
@@ -349,7 +324,7 @@ bool ParseCubeShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
             outCubeShapeDesc->halfExtents = halfExtents;
             outCubeShapeDesc->primPath = collisionAPI.GetPrim().GetPrimPath();
 
-            FinalizeDesc(collisionAPI, outCubeShapeDesc);
+            FinalizeCollisionDesc(collisionAPI, outCubeShapeDesc);
         }
         else
         {
@@ -371,11 +346,6 @@ bool ParseCubeShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
 template<typename T>
 void GetAxisRadiusHalfHeight(const T& shape, const GfTransform& tr, const SdfPath& primPath, UsdPhysicsAxis::Enum* outAxis, float* outRadius, float* outHalfHeight)
 {
-    if (!outAxis || !outRadius || !outHalfHeight)
-    {
-        return;
-    }
-
     // Get shape parameters
     {
         double radiusAttr;
@@ -402,8 +372,7 @@ void GetAxisRadiusHalfHeight(const T& shape, const GfTransform& tr, const SdfPat
 
     {
         // scale the radius and height based on the given axis token
-        const GfVec3d sc = tr.GetScale();
-        CheckNonUniformScale(sc, primPath);
+        const GfVec3d sc = tr.GetScale();        
         if (*outAxis == UsdPhysicsAxis::X)
         {
             *outHalfHeight *= float(sc[0]);
@@ -422,6 +391,7 @@ void GetAxisRadiusHalfHeight(const T& shape, const GfTransform& tr, const SdfPat
     }
 }
 
+// Parse cylinder shape desc
 bool ParseCylinderShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
     UsdPhysicsCylinderShapeDesc* outCylinderShapeDesc)
 {
@@ -445,7 +415,7 @@ bool ParseCylinderShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
             outCylinderShapeDesc->halfHeight = fabsf(halfHeight);
             outCylinderShapeDesc->primPath = collisionAPI.GetPrim().GetPrimPath();
 
-            FinalizeDesc(collisionAPI, outCylinderShapeDesc);
+            FinalizeCollisionDesc(collisionAPI, outCylinderShapeDesc);
         }
         else
         {
@@ -464,6 +434,7 @@ bool ParseCylinderShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
     return true;
 }
 
+// Parse capsule shape desc
 bool ParseCapsuleShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
     UsdPhysicsCapsuleShapeDesc* outCapsuleShapeDesc)
 {
@@ -487,7 +458,7 @@ bool ParseCapsuleShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
             outCapsuleShapeDesc->halfHeight = fabsf(halfHeight);
             outCapsuleShapeDesc->primPath = collisionAPI.GetPrim().GetPrimPath();
 
-            FinalizeDesc(collisionAPI, outCapsuleShapeDesc);
+            FinalizeCollisionDesc(collisionAPI, outCapsuleShapeDesc);
         }
         else
         {
@@ -506,6 +477,7 @@ bool ParseCapsuleShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
     return true;
 }
 
+// Parse cone shape desc
 bool ParseConeShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
     UsdPhysicsConeShapeDesc* outConeShapeDesc)
 {
@@ -529,7 +501,7 @@ bool ParseConeShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
             outConeShapeDesc->halfHeight = fabsf(halfHeight);
             outConeShapeDesc->primPath = collisionAPI.GetPrim().GetPrimPath();
 
-            FinalizeDesc(collisionAPI, outConeShapeDesc);
+            FinalizeCollisionDesc(collisionAPI, outConeShapeDesc);
         }
         else
         {
@@ -548,6 +520,7 @@ bool ParseConeShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
     return true;
 }
 
+// Parse mesh shape desc
 bool ParseMeshShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
     UsdPhysicsMeshShapeDesc* outMeshShapeDesc)
 {
@@ -598,7 +571,7 @@ bool ParseMeshShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
 
             outMeshShapeDesc->primPath = collisionAPI.GetPrim().GetPrimPath();
 
-            FinalizeDesc(collisionAPI, outMeshShapeDesc);
+            FinalizeCollisionDesc(collisionAPI, outMeshShapeDesc);
         }
         else
         {
@@ -617,6 +590,7 @@ bool ParseMeshShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
     return true;
 }
 
+// Parse plane shape desc
 bool ParsePlaneShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
     UsdPhysicsPlaneShapeDesc* outPlaneShapeDesc)
 {
@@ -642,7 +616,7 @@ bool ParsePlaneShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
             outPlaneShapeDesc->axis = axis;
             outPlaneShapeDesc->primPath = collisionAPI.GetPrim().GetPrimPath();
 
-            FinalizeDesc(collisionAPI, outPlaneShapeDesc);
+            FinalizeCollisionDesc(collisionAPI, outPlaneShapeDesc);
         }
         else
         {
@@ -661,6 +635,7 @@ bool ParsePlaneShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
     return true;
 }
 
+// Parse sphere points shape desc
 bool ParseSpherePointsShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
     UsdPhysicsSpherePointsShapeDesc* outSpherePointsShapeDesc)
 {
@@ -685,10 +660,6 @@ bool ParseSpherePointsShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
                     {
                         const GfVec3d sc = tr.GetScale();
 
-                        // as we don't support scale in physics and scale can 
-                        // be non uniform we pick the largest scale value as the 
-                        // sphere radius base
-                        CheckNonUniformScale(sc, usdPrim.GetPrimPath());
                         sphereScale = fmaxf(fmaxf(fabsf(float(sc[1])), 
                                                   fabsf(float(sc[0]))),
                                             fabsf(float(sc[2])));
@@ -706,24 +677,18 @@ bool ParseSpherePointsShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
                 }
                 else
                 {
-                    TF_DIAGNOSTIC_WARNING("UsdGeomPoints width array size does "
-                                          "not match position array size: %s",
-                        usdPrim.GetPrimPath().GetText());
                     outSpherePointsShapeDesc->isValid = false;
                 }
             }
             else
             {
-                TF_DIAGNOSTIC_WARNING(
-                    "UsdGeomPoints width array not filled: %s",
-                    usdPrim.GetPrimPath().GetText());
                 outSpherePointsShapeDesc->isValid = false;
             }
 
             outSpherePointsShapeDesc->primPath =
                 collisionAPI.GetPrim().GetPrimPath();
 
-            FinalizeDesc(collisionAPI, outSpherePointsShapeDesc);
+            FinalizeCollisionDesc(collisionAPI, outSpherePointsShapeDesc);
         }
         else
         {
@@ -741,6 +706,7 @@ bool ParseSpherePointsShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
     return true;
 }
 
+// Parse custom shape desc
 bool ParseCustomShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
     UsdPhysicsCustomShapeDesc* outCustomShapeDesc)
 {
@@ -749,7 +715,7 @@ bool ParseCustomShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
 
         outCustomShapeDesc->primPath = collisionAPI.GetPrim().GetPrimPath();
 
-        FinalizeDesc(collisionAPI, outCustomShapeDesc);
+        FinalizeCollisionDesc(collisionAPI, outCustomShapeDesc);
     }
     else
     {
@@ -760,7 +726,7 @@ bool ParseCustomShapeDesc(const UsdPhysicsCollisionAPI& collisionAPI,
     return true;
 }
 
-
+// Parse collision group desc
 bool ParseCollisionGroupDesc(const UsdPhysicsCollisionGroup& collisionGroup,
     UsdPhysicsCollisionGroupDesc* outCollisionGroupDesc)
 {
@@ -789,6 +755,7 @@ bool ParseCollisionGroupDesc(const UsdPhysicsCollisionGroup& collisionGroup,
     return true;
 }
 
+// Get joint rel target
 SdfPath GetRel(const UsdRelationship& ref, const UsdPrim& jointPrim)
 {
     SdfPathVector targets;
@@ -798,34 +765,10 @@ SdfPath GetRel(const UsdRelationship& ref, const UsdPrim& jointPrim)
     {
         return SdfPath();
     }
-    if (targets.size() > 1)
-    {
-        TF_DIAGNOSTIC_WARNING("Joint prim does have relationship to multiple "
-                              "bodies this is not supported, jointPrim %s",
-            jointPrim.GetPrimPath().GetText());
-        return targets.at(0);
-    }
-
     return targets.at(0);
 }
 
-bool CheckJointRel(const SdfPath& relPath, const UsdPrim& jointPrim)
-{
-    if (relPath == SdfPath())
-        return true;
-
-    const UsdPrim relPrim = jointPrim.GetStage()->GetPrimAtPath(relPath);
-    if (!relPrim)
-    {
-        TF_CODING_ERROR("Joint (%s) body relationship %s points to a non "
-                         "existent prim, joint will not be parsed.",
-            jointPrim.GetPrimPath().GetText(),
-            relPath.GetText());
-        return false;
-    }
-    return true;
-}
-
+// Get body for a given path, the body can be on a parent prim
 UsdPrim GetBodyPrim(UsdStageWeakPtr stage, const SdfPath& relPath, 
                     UsdPrim& relPrim)
 {
@@ -848,14 +791,10 @@ UsdPrim GetBodyPrim(UsdStageWeakPtr stage, const SdfPath& relPath,
     return collisionPrim;
 }
 
+// Get joint local pose base on provided body rel path
 SdfPath GetLocalPose(UsdStageWeakPtr stage, const SdfPath& relPath, GfVec3f* outT,
     GfQuatf* outQ)
 {
-    if (!outT || !outQ)
-    {
-        return SdfPath();
-    }
-
     UsdPrim relPrim;
     const UsdPrim body = GetBodyPrim(stage, relPath, relPrim);
 
@@ -913,6 +852,7 @@ SdfPath GetLocalPose(UsdStageWeakPtr stage, const SdfPath& relPath, GfVec3f* out
     return body ? body.GetPrimPath() : SdfPath();
 }
 
+// Finalize joint desc
 void FinalizeJoint(const UsdPhysicsJoint& jointPrim, 
                    UsdPhysicsJointDesc* outJointDesc)
 {
@@ -948,6 +888,7 @@ void FinalizeJoint(const UsdPhysicsJoint& jointPrim,
     outJointDesc->localPose1Orientation = q1;
 }
 
+// Parse common joint parameters
 bool ParseCommonJointDesc(const UsdPhysicsJoint& jointPrim, 
                           UsdPhysicsJointDesc* outJointDesc)
 {
@@ -966,18 +907,12 @@ bool ParseCommonJointDesc(const UsdPhysicsJoint& jointPrim,
     outJointDesc->rel0 = GetRel(jointPrim.GetBody0Rel(), prim);
     outJointDesc->rel1 = GetRel(jointPrim.GetBody1Rel(), prim);
 
-    // check rel validity
-    if (!CheckJointRel(outJointDesc->rel0, prim) || !CheckJointRel(
-        outJointDesc->rel1, prim))
-    {
-        return false;
-    }
-
     FinalizeJoint(jointPrim, outJointDesc);
 
     return true;
 }
 
+// Parse distance joint desc
 bool ParseDistanceJointDesc(const UsdPhysicsDistanceJoint& distanceJoint,
     UsdPhysicsDistanceJointDesc* outDistanceJointDesc)
 {
@@ -1015,6 +950,7 @@ bool ParseDistanceJointDesc(const UsdPhysicsDistanceJoint& distanceJoint,
     return true;
 }
 
+// Parse joint drive
 bool ParseDrive(const UsdPhysicsDriveAPI& drive, 
                 UsdPhysicsJointDrive* outJointDrive)
 {
@@ -1045,6 +981,7 @@ bool ParseDrive(const UsdPhysicsDriveAPI& drive,
     return true;
 }
 
+// Parse fixed joint desc
 bool ParseFixedJointDesc(const UsdPhysicsFixedJoint& fixedJoint,
     UsdPhysicsFixedJointDesc* outFixedJointDesc)
 {
@@ -1066,6 +1003,7 @@ bool ParseFixedJointDesc(const UsdPhysicsFixedJoint& fixedJoint,
     return true;
 }
 
+// Parse joint limit
 bool ParseLimit(const UsdPhysicsLimitAPI& limit, 
                 UsdPhysicsJointLimit* outJointLimit)
 {
@@ -1091,6 +1029,7 @@ bool ParseLimit(const UsdPhysicsLimitAPI& limit,
     return true;
 }
 
+// Parse generic D6 joint desc
 bool ParseD6JointDesc(const UsdPhysicsJoint& jointPrim, 
                       UsdPhysicsD6JointDesc* outJointDesc)
 {
@@ -1158,6 +1097,7 @@ bool ParseD6JointDesc(const UsdPhysicsJoint& jointPrim,
     return true;
 }
 
+// Parse custom joint desc
 bool ParseCustomJointDesc(const UsdPhysicsJoint& jointPrim,
     UsdPhysicsCustomJointDesc* outCustomJointDesc)
 {
@@ -1179,6 +1119,7 @@ bool ParseCustomJointDesc(const UsdPhysicsJoint& jointPrim,
     return true;
 }
 
+// Parse rigid body material desc
 bool ParseRigidBodyMaterialDesc(const UsdPhysicsMaterialAPI& usdMaterial,
     UsdPhysicsRigidBodyMaterialDesc* outRbMaterialDesc)
 {
@@ -1205,6 +1146,7 @@ bool ParseRigidBodyMaterialDesc(const UsdPhysicsMaterialAPI& usdMaterial,
     return true;
 }
 
+// Parse linear drive
 bool ParseLinearDrive(const UsdPrim& usdPrim, UsdPhysicsJointDrive* outDst)
 {
     outDst->enabled = false;
@@ -1218,7 +1160,7 @@ bool ParseLinearDrive(const UsdPrim& usdPrim, UsdPhysicsJointDrive* outDst)
     return true;
 }
 
-
+// Parse prismatic joint desc
 bool ParsePrismaticJointDesc(const UsdPhysicsPrismaticJoint& prismaticJoint,
     UsdPhysicsPrismaticJointDesc* outPrismaticJointDesc)
 {
@@ -1268,6 +1210,7 @@ bool ParsePrismaticJointDesc(const UsdPhysicsPrismaticJoint& prismaticJoint,
     return true;
 }
 
+// Parse angular drive
 bool ParseAngularDrive(const UsdPrim& usdPrim, UsdPhysicsJointDrive* outDst)
 {
     outDst->enabled = false;
@@ -1282,6 +1225,7 @@ bool ParseAngularDrive(const UsdPrim& usdPrim, UsdPhysicsJointDrive* outDst)
 }
 
 
+// Parse revolute joint desc
 bool ParseRevoluteJointDesc(const UsdPhysicsRevoluteJoint& revoluteJoint,
     UsdPhysicsRevoluteJointDesc* outRevoluteJointDesc)
 {
@@ -1331,41 +1275,7 @@ bool ParseRevoluteJointDesc(const UsdPhysicsRevoluteJoint& revoluteJoint,
     return true;
 }
 
-template<typename T>
-inline bool ScaleIsUniform(T scaleX, T scaleY, T scaleZ, T eps = T(1.0e-5))
-{
-    // Find min and max scale values
-    T lo, hi;
-
-    if (scaleX < scaleY)
-    {
-        lo = scaleX;
-        hi = scaleY;
-    }
-    else
-    {
-        lo = scaleY;
-        hi = scaleX;
-    }
-
-    if (scaleZ < lo)
-    {
-        lo = scaleZ;
-    }
-    else if (scaleZ > hi)
-    {
-        hi = scaleZ;
-    }
-
-    if (lo* hi < 0.0)
-    {
-        return false;   // opposite signs
-    }
-
-    return hi > 0.0 ? hi - lo <= eps * lo : lo - hi >= eps * hi;
-}
-
-
+// Compute the rigid body transformation and store to the desc
 void GetRigidBodyTransformation(const UsdPrim& bodyPrim, 
                                 UsdPhysicsRigidBodyDesc* outDesc)
 {
@@ -1377,60 +1287,17 @@ void GetRigidBodyTransformation(const UsdPrim& bodyPrim,
     const GfQuatd rot = tr.GetRotation().GetQuat();
     const GfVec3d sc = tr.GetScale();
 
-    if (!ScaleIsUniform(sc[0], sc[1], sc[2]) &&
-        tr.GetScaleOrientation().GetQuaternion() != GfQuaternion::GetIdentity())
-    {
-        TF_DIAGNOSTIC_WARNING(
-            "ScaleOrientation is not supported for rigid bodies, prim path: "
-            "%s.You may ignore this if the scale is close to uniform.",
-            bodyPrim.GetPrimPath().GetText());
-    }
-
     outDesc->position = GfVec3f(pos);
     outDesc->rotation = GfQuatf(rot);
     outDesc->scale = GfVec3f(sc);
 }
 
+// Parse rigid body desc
 bool ParseRigidBodyDesc(const UsdPhysicsRigidBodyAPI& rigidBodyAPI,
     UsdPhysicsRigidBodyDesc* outRigidBodyDesc)
 {
     if (outRigidBodyDesc && rigidBodyAPI)
     {
-        if (!rigidBodyAPI.GetPrim().IsA<UsdGeomXformable>())
-        {
-            TF_DIAGNOSTIC_WARNING(
-                "RigidBodyAPI applied to a non-xformable primitive. (%s)",
-                rigidBodyAPI.GetPrim().GetPrimPath().GetText());
-            return false;
-        }
-
-        // check instancing
-        {
-            bool reportInstanceError = false;
-            if (rigidBodyAPI.GetPrim().IsInstanceProxy())
-            {
-                reportInstanceError = true;
-
-                bool kinematic = false;
-                rigidBodyAPI.GetKinematicEnabledAttr().Get(&kinematic);
-                if (kinematic)
-                    reportInstanceError = false;
-
-                bool enabled = false;
-                rigidBodyAPI.GetRigidBodyEnabledAttr().Get(&enabled);
-                if (!enabled)
-                    reportInstanceError = false;
-
-                if (reportInstanceError)
-                {
-                    TF_DIAGNOSTIC_WARNING(
-                        "RigidBodyAPI on an instance proxy not supported. %s",
-                        rigidBodyAPI.GetPrim().GetPrimPath().GetText());
-                    return false;
-                }
-            }
-        }
-
         // transformation
         GetRigidBodyTransformation(rigidBodyAPI.GetPrim(), outRigidBodyDesc);
 
@@ -1472,6 +1339,7 @@ bool ParseRigidBodyDesc(const UsdPhysicsRigidBodyAPI& rigidBodyAPI,
     return true;
 }
 
+// Parse spherical joint desc
 bool ParseSphericalJointDesc(const UsdPhysicsSphericalJoint& sphericalJoint,
     UsdPhysicsSphericalJointDesc* outSphericalJointDesc)
 {
@@ -1517,6 +1385,7 @@ bool ParseSphericalJointDesc(const UsdPhysicsSphericalJoint& sphericalJoint,
     return true;
 }
 
+// Parse scene desc
 bool ParseSceneDesc(const UsdPhysicsScene& scene, 
                     UsdPhysicsSceneDesc* outSceneDesc)
 {
@@ -1562,6 +1431,7 @@ bool ParseSceneDesc(const UsdPhysicsScene& scene,
     return true;
 }
 
+// Helper flags to store APIs
 struct SchemaAPIFlag
 {
     enum Enum
@@ -1573,22 +1443,9 @@ struct SchemaAPIFlag
     };
 };
 
-bool CheckNestedArticulationRoot(const UsdPrim& usdPrim,
-    const std::unordered_set<SdfPath, SdfPath::Hash>& articulationSet)
-{
-    UsdPrim parent = usdPrim.GetParent();
-    while (parent && parent != usdPrim.GetStage()->GetPseudoRoot())
-    {
-        if (articulationSet.find(parent.GetPrimPath()) != articulationSet.end())
-            return true;
-        parent = parent.GetParent();
-    }
-
-    return false;
-}
-
 using RigidBodyMap = std::map<SdfPath, UsdPhysicsRigidBodyDesc*>;
 
+// Check if body is dynamic accessing parsed data
 bool IsDynamicBody(const UsdPrim& usdPrim, const RigidBodyMap& bodyMap, 
                    bool* outPhysicsAPIFound)
 {
@@ -1608,7 +1465,7 @@ bool IsDynamicBody(const UsdPrim& usdPrim, const RigidBodyMap& bodyMap,
     return false;
 }
 
-
+// Check if prim has a dynamic body as a parent
 bool HasDynamicBodyParent(const UsdPrim& usdPrim, const RigidBodyMap& bodyMap,
     UsdPrim* outBodyPrimPath)
 {
@@ -1633,7 +1490,7 @@ bool HasDynamicBodyParent(const UsdPrim& usdPrim, const RigidBodyMap& bodyMap,
     return false;
 }
 
-
+// Helper function to process descriptors in parallel 
 template <typename DescType, typename UsdType>
 void ProcessPhysicsPrims(const std::vector<UsdPrim>& physicsPrims,
     std::vector<DescType>& physicsDesc,
@@ -1662,6 +1519,7 @@ void ProcessPhysicsPrims(const std::vector<UsdPrim>& physicsPrims,
     }
 }
 
+// Helper function to call report function
 template <typename DescType>
 void CallReportFn(
     UsdPhysicsObjectType::Enum descType, 
@@ -1677,6 +1535,7 @@ void CallReportFn(
     reportFn(descType, primPathsVector.size(), primPathsVector.data(), 
              physicsDesc.data(), userData);
 }
+
 
 void CheckRigidBodySimulationOwner(
     std::vector<UsdPrim>& rigidBodyPrims, 
@@ -1873,6 +1732,7 @@ void CheckArticulationSimulationOwner(std::vector<UsdPrim>& articulationPrims,
     }
 }
 
+// Get body for the usdPrim can be a parent
 SdfPath GetRigidBody(const UsdPrim& usdPrim, const RigidBodyMap& bodyMap)
 {
     UsdPrim bodyPrim = UsdPrim();
@@ -1895,6 +1755,7 @@ SdfPath GetRigidBody(const UsdPrim& usdPrim, const RigidBodyMap& bodyMap)
     }
 }
 
+// Compute the relative pose between the collision and the rigid body
 void GetCollisionShapeLocalTransfrom(const UsdPrim& collisionPrim,
     const UsdPrim& bodyPrim,
     GfVec3f* outLocalPos,
@@ -1944,6 +1805,7 @@ void GetCollisionShapeLocalTransfrom(const UsdPrim& collisionPrim,
     *outLocalPos = localPos;
 }
 
+// Finalize the collision, requires the bodies
 void FinalizeCollision(UsdStageWeakPtr stage, 
                        const UsdPhysicsRigidBodyDesc* bodyDesc, 
                        UsdPhysicsShapeDesc* outShapeDesc)
@@ -1962,6 +1824,7 @@ void FinalizeCollision(UsdStageWeakPtr stage,
     }
 }
 
+// Finalize the collision desc, run in parallel
 template <typename DescType>
 void FinalizeCollisionDescs(
     UsdGeomXformCache& xfCache, const std::vector<UsdPrim>& physicsPrims, 
@@ -2046,6 +1909,11 @@ bool IsInLinkMap(const SdfPath& path,
     return false;
 }
 
+// Recursive traversal of the hierarchy, adding weight for the links based on number
+// of childs and if it belongs to a joint to world
+// Each child adds 100 weight, while if link belongs to a MC joint it adds 1000 weight
+// if link belong to a joint to world it adds 10000 weight. The weight is used
+// if an articulation root has to be decided automatically. 
 void TraverseHierarchy(const UsdStageWeakPtr stage, const SdfPath& linkPath,
     ArticulationLinkMap& articulationLinkMap, const BodyJointMap& bodyJointMap,
     uint32_t& index, SdfPathVector* outLinkOrderVector)
@@ -2109,6 +1977,7 @@ void TraverseHierarchy(const UsdStageWeakPtr stage, const SdfPath& linkPath,
     }
 }
 
+// Traversal that marks distances, this is used for finding the center of the graph
 void TraverseChilds(const ArticulationLink& link, 
                     const ArticulationLinkMap& map, uint32_t startIndex, 
                     uint32_t distance, int32_t* pathMatrix)
@@ -2132,6 +2001,7 @@ void TraverseChilds(const ArticulationLink& link,
     }
 }
 
+// Get the center of graph
 SdfPath GetCenterOfGraph(const ArticulationLinkMap& map, 
                          const SdfPathVector& linkOrderVector)
 {
@@ -2207,6 +2077,7 @@ SdfPath GetCenterOfGraph(const ArticulationLinkMap& map,
     return primpath;
 }
 
+// Finalize articulations, process in parallel
 void FinalizeArticulations(const UsdStageWeakPtr stage,
     ArticulationMap& articulationMap, const RigidBodyMap& rigidBodyMap,
     const JointMap& jointMap)
@@ -2266,24 +2137,6 @@ void FinalizeArticulations(const UsdStageWeakPtr stage,
                     rigidBodyMap.find(articulationPath);
             if (bodyIt != rigidBodyMap.end())
             {
-                if (!bodyIt->second->rigidBodyEnabled)
-                {
-                    TF_DIAGNOSTIC_WARNING("ArticulationRootAPI definition on a "
-                                          "static rigid body is not allowed, "
-                                          "articulation root will be ignored. "
-                                          "Prim: %s",
-                        articulationPath.GetText());
-                    return;
-                }
-                if (bodyIt->second->kinematicBody)
-                {
-                    TF_DIAGNOSTIC_WARNING("ArticulationRootAPI definition on a "
-                                          "kinematic rigid body is not "
-                                          "allowed, articulation root will be "
-                                          "ignored. Prim: %s",
-                        articulationPath.GetText());
-                    return;
-                }
                 it.second->rootPrims.push_back(bodyIt->first);
             }
             else
@@ -3021,65 +2874,14 @@ bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
     std::vector<UsdPhysicsRigidBodyDesc> rigidBodyDescs;
     ProcessPhysicsPrims<UsdPhysicsRigidBodyDesc, UsdPhysicsRigidBodyAPI>
         (rigidBodyPrims, rigidBodyDescs, ParseRigidBodyDesc);
-    // Ensure if we have a hierarchical parent that has a dynamic parent,
-    // that we also have a reset xform stack, otherwise we should log an error.
-    // check for nested articulation roots, these are not supported
+
     RigidBodyMap bodyMap;
     for (size_t i = rigidBodyPrims.size(); i--;)
     {
         bodyMap[rigidBodyPrims[i].GetPrimPath()] = &rigidBodyDescs[i];
     }
 
-    for (size_t i = rigidBodyPrims.size(); i--;)
-    {
-        const UsdPrim bodyPrim = rigidBodyPrims[i];
-        UsdPrim bodyParent = UsdPrim();
-        if (HasDynamicBodyParent(bodyPrim.GetParent(), bodyMap, &bodyParent))
-        {
-            bool hasResetXformStack = false;
-            UsdPrim parent = bodyPrim;
-            while (parent != stage->GetPseudoRoot() && parent != bodyParent)
-            {
-                const UsdGeomXformable xform(parent);
-                if (xform && xform.GetResetXformStack())
-                {
-                    hasResetXformStack = true;
-                    break;
-                }
-                parent = parent.GetParent();
-            }
-            if (!hasResetXformStack)
-            {
 
-                TF_DIAGNOSTIC_WARNING(
-                    "Rigid Body of (%s) missing xformstack reset when child of "
-                    "rigid body (%s) in hierarchy. Simulation of multiple "
-                    "RigidBodyAPI's in a hierarchy will cause unpredicted "
-                    "results. Please fix the hierarchy or use XformStack reset.",
-                    bodyPrim.GetPrimPath().GetText(),
-                    bodyParent.GetPrimPath().GetText());
-
-                rigidBodyPrims[i] = rigidBodyPrims.back();
-                rigidBodyPrims.pop_back();
-            }
-        }
-    }
-
-    // articulations
-    // check for nested articulation roots, these are not supported    
-    for (size_t i = articulationPrims.size(); i--;)
-    {
-        if (CheckNestedArticulationRoot(articulationPrims[i], 
-                                        articulationPathsSet))
-        {
-            TF_DIAGNOSTIC_WARNING(
-                "Nested ArticulationRootAPI not supported, API ignored, "
-                "prim %s.", 
-                articulationPrims[i].GetPrimPath().GetString().c_str());
-            articulationPrims[i] = articulationPrims.back();
-            articulationPrims.pop_back();
-        }
-    }
     std::vector<UsdPhysicsArticulationDesc> articulationDescs;
     ProcessPhysicsPrims<UsdPhysicsArticulationDesc, 
         UsdPhysicsArticulationRootAPI>
