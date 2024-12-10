@@ -16,7 +16,7 @@
 
 #include "pxr/usd/usdPhysics/api.h"
 #include "pxr/usd/usdPhysics/parseDesc.h"
-#include "pxr/usd/usdPhysics/parsePrimIterator.h"
+
 
 PXR_NAMESPACE_OPEN_SCOPE
 

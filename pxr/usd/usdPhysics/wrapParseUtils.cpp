@@ -39,32 +39,6 @@ void registerVectorConverter(const char* name)
 }
 
 
-// Wrapper class
-class ParsePrimIteratorBaseWrap : public ParsePrimIteratorBase,
-    public wrapper<ParsePrimIteratorBase>
-{
-public:
-    void Reset() {
-        this->get_override("Reset")();
-    }
-
-    bool AtEnd() const {
-        return this->get_override("AtEnd")();
-    }
-
-    UsdPrimRange::const_iterator GetCurrent() {
-        return this->get_override("GetCurrent")();
-    }
-
-    void Next() {
-        this->get_override("Next")();
-    }
-
-    void PruneChildren() {
-        this->get_override("PruneChildren")();
-    }
-};
-
 class MarshalCallback
 {
 public:
@@ -1355,22 +1329,6 @@ void wrapParseUtils()
 
     registerVectorConverter<UsdPhysicsCollisionGroupDesc>(
         "CollisionGroupDescVector");
-
-    class_<ParsePrimIteratorBaseWrap, noncopyable>
-        vparseitclsvv("ParsePrimIteratorBaseWrap", no_init);
-    vparseitclsvv.def(init<>());
-
-    class_<ParsePrimIteratorRange, bases<
-        ParsePrimIteratorBase>>
-            parseitcls("ParsePrimIteratorRange", no_init);
-    parseitcls
-        .def(init<UsdPrimRange>(arg("primRange")));
-
-    class_<ExcludeListPrimIteratorRange, bases<
-        ParsePrimIteratorBase>>
-            parseitExccls("ExcludeListPrimIteratorRange", no_init);
-    parseitExccls
-        .def(init<UsdPrimRange, SdfPathVector>());
 
     def("LoadUsdPhysicsFromRange", _LoadUsdPhysicsFromRange,
         (args("stage"), args("includePaths"), args("excludePaths") = std::vector<SdfPath>(), args("customTokens") =

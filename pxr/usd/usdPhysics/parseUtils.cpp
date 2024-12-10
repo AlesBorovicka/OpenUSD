@@ -9,6 +9,8 @@
 
 #include "pxr/base/gf/transform.h"
 
+#include "pxr/usd/usd/primRange.h"
+
 #include "pxr/usd/usdGeom/gprim.h"
 #include "pxr/usd/usdGeom/mesh.h"
 #include "pxr/usd/usdGeom/sphere.h"
