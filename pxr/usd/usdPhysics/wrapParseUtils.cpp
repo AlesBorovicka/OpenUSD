@@ -175,20 +175,22 @@ public:
 } gMarshalCallback;
 
 template <typename DescType>
-void copyDescs(size_t numDesc, const SdfPath* primsSource, 
-               SdfPathVector& primsDest, 
-               const UsdPhysicsObjectDesc* objectDescsSource, 
+void copyDescs(TfSpan<const SdfPath> primsSource,
+               SdfPathVector& primsDest,
+               TfSpan<const UsdPhysicsObjectDesc> objectDescsSource, 
                std::vector<DescType>& objectDescsDest)
 {
-    primsDest.resize(numDesc);
-    objectDescsDest.resize(numDesc);
+    primsDest.resize(primsSource.size());
+    objectDescsDest.resize(objectDescsSource.size());
 
-    if (numDesc)
+    TF_VERIFY(primsDest.size() == objectDescsDest.size());
+
+    if (!objectDescsDest.empty())
     {
-        const DescType* sourceDesc = reinterpret_cast<const DescType*>(
-            objectDescsSource);
+        const DescType* sourceDesc =
+            reinterpret_cast<const DescType*>(objectDescsSource.data());
 
-        for (size_t i = 0; i < numDesc; i++)
+        for (size_t i = 0; i < objectDescsDest.size(); i++)
         {
             primsDest[i] = primsSource[i];
             objectDescsDest[i] = sourceDesc[i];
@@ -196,138 +198,147 @@ void copyDescs(size_t numDesc, const SdfPath* primsSource,
     }
 }
 
-void ReportPhysicsObjectsFn(UsdPhysicsObjectType::Enum type, size_t numDesc,
-    const SdfPath* primPaths,
-    const UsdPhysicsObjectDesc* objectDescs, void* userData)
+void ReportPhysicsObjectsFn(UsdPhysicsObjectType::Enum type,
+                            TfSpan<const SdfPath> primPaths,
+                            TfSpan<const UsdPhysicsObjectDesc> objectDescs,
+                            const VtValue& userData)
 {
-    MarshalCallback* cb = (MarshalCallback*)userData;
+    MarshalCallback* cb = userData.GetWithDefault<MarshalCallback*>(nullptr);
+    if (!cb) {
+        TfPyThrowTypeError("User data can only store MasrshallCallaback*");
+        return;
+    }
+    if (primPaths.size() != objectDescs.size()) {
+        TfPyThrowValueError("primPaths and objectDescs must have the same size.");
+        return;
+    }
 
     switch (type)
     {
     case UsdPhysicsObjectType::Scene:
     {
-        copyDescs(numDesc, primPaths, cb->scenePrimPaths, objectDescs, 
+        copyDescs(primPaths, cb->scenePrimPaths, objectDescs, 
                   cb->sceneDescs);
     }
     break;
     case UsdPhysicsObjectType::RigidBody:
     {
-        copyDescs(numDesc, primPaths, cb->rigidBodyPrimPaths, objectDescs, 
+        copyDescs(primPaths, cb->rigidBodyPrimPaths, objectDescs, 
                   cb->rigidBodyDescs);
     }
     break;
     case UsdPhysicsObjectType::SphereShape:
     {
-        copyDescs(numDesc, primPaths, cb->sphereShapePrimPaths, objectDescs, 
+        copyDescs(primPaths, cb->sphereShapePrimPaths, objectDescs, 
                   cb->sphereShapeDescs);
     }
     break;
     case UsdPhysicsObjectType::CubeShape:
     {
-        copyDescs(numDesc, primPaths, cb->cubeShapePrimPaths, objectDescs, 
+        copyDescs(primPaths, cb->cubeShapePrimPaths, objectDescs, 
                   cb->cubeShapeDescs);
     }
     break;
     case UsdPhysicsObjectType::CapsuleShape:
     {
-        copyDescs(numDesc, primPaths, cb->capsuleShapePrimPaths, objectDescs, 
+        copyDescs(primPaths, cb->capsuleShapePrimPaths, objectDescs, 
                   cb->capsuleShapeDescs);
     }
     break;
     case UsdPhysicsObjectType::CylinderShape:
     {
-        copyDescs(numDesc, primPaths, cb->cylinderShapePrimPaths, objectDescs, 
+        copyDescs(primPaths, cb->cylinderShapePrimPaths, objectDescs, 
                   cb->cylinderShapeDescs);
     }
     break;
     case UsdPhysicsObjectType::ConeShape:
     {
-        copyDescs(numDesc, primPaths, cb->coneShapePrimPaths, objectDescs, 
+        copyDescs(primPaths, cb->coneShapePrimPaths, objectDescs, 
                   cb->coneShapeDescs);
     }
     break;
     case UsdPhysicsObjectType::MeshShape:
     {
-        copyDescs(numDesc, primPaths, cb->meshShapePrimPaths, objectDescs, 
+        copyDescs(primPaths, cb->meshShapePrimPaths, objectDescs, 
                   cb->meshShapeDescs);
     }
     break;
     case UsdPhysicsObjectType::PlaneShape:
     {
-        copyDescs(numDesc, primPaths, cb->planeShapePrimPaths, objectDescs, 
+        copyDescs(primPaths, cb->planeShapePrimPaths, objectDescs, 
                   cb->planeShapeDescs);
     }
     break;
     case UsdPhysicsObjectType::CustomShape:
     {
-        copyDescs(numDesc, primPaths, cb->customShapePrimPaths, objectDescs,
-            cb->customShapeDescs);
+        copyDescs(primPaths, cb->customShapePrimPaths, objectDescs,
+                  cb->customShapeDescs);
     }
     break;
     case UsdPhysicsObjectType::SpherePointsShape:
     {
-        copyDescs(numDesc, primPaths, cb->spherePointShapePrimPaths, objectDescs,
-            cb->spherePointsShapeDescs);
+        copyDescs(primPaths, cb->spherePointShapePrimPaths, objectDescs,
+                  cb->spherePointsShapeDescs);
     }
     break;
     case UsdPhysicsObjectType::FixedJoint:
     {
-        copyDescs(numDesc, primPaths, cb->fixedJointPrimPaths, objectDescs, 
+        copyDescs(primPaths, cb->fixedJointPrimPaths, objectDescs, 
                   cb->fixedJointDescs);
     }
     break;
     case UsdPhysicsObjectType::RevoluteJoint:
     {
-        copyDescs(numDesc, primPaths, cb->revoluteJointPrimPaths, objectDescs,
-            cb->revoluteJointDescs);
+        copyDescs(primPaths, cb->revoluteJointPrimPaths, objectDescs,
+                  cb->revoluteJointDescs);
     }
     break;
     case UsdPhysicsObjectType::PrismaticJoint:
     {
-        copyDescs(numDesc, primPaths, cb->prismaticJointPrimPaths, objectDescs,
-            cb->prismaticJointDescs);
+        copyDescs(primPaths, cb->prismaticJointPrimPaths, objectDescs,
+                  cb->prismaticJointDescs);
     }
     break;
     case UsdPhysicsObjectType::SphericalJoint:
     {
-        copyDescs(numDesc, primPaths, cb->sphericalJointPrimPaths, objectDescs,
-            cb->sphericalJointDescs);
+        copyDescs(primPaths, cb->sphericalJointPrimPaths, objectDescs,
+                  cb->sphericalJointDescs);
     }
     break;
     case UsdPhysicsObjectType::DistanceJoint:
     {
-        copyDescs(numDesc, primPaths, cb->distanceJointPrimPaths, objectDescs,
-            cb->distanceJointDescs);
+        copyDescs(primPaths, cb->distanceJointPrimPaths, objectDescs,
+                  cb->distanceJointDescs);
     }
     break;
     case UsdPhysicsObjectType::D6Joint:
     {
-        copyDescs(numDesc, primPaths, cb->d6JointPrimPaths, objectDescs, 
+        copyDescs(primPaths, cb->d6JointPrimPaths, objectDescs, 
                   cb->d6JointDescs);
     }
     break;
     case UsdPhysicsObjectType::CustomJoint:
     {
-        copyDescs(numDesc, primPaths, cb->customJointPrimPaths, objectDescs,
+        copyDescs(primPaths, cb->customJointPrimPaths, objectDescs,
             cb->customJointDescs);
     }
     break;
     case UsdPhysicsObjectType::RigidBodyMaterial:
     {
-        copyDescs(numDesc, primPaths, cb->rigidBodyMaterialPrimPaths, 
+        copyDescs(primPaths, cb->rigidBodyMaterialPrimPaths, 
                   objectDescs, cb->rigidBodyMaterialDescs);
     }
     break;
     case UsdPhysicsObjectType::Articulation:
     {
-        copyDescs(numDesc, primPaths, cb->articulationPrimPaths, objectDescs,
-            cb->articulationDescs);
+        copyDescs(primPaths, cb->articulationPrimPaths, objectDescs,
+                  cb->articulationDescs);
     }
     break;
     case UsdPhysicsObjectType::CollisionGroup:
     {
-        copyDescs(numDesc, primPaths, cb->collisionGroupPrimPaths, objectDescs,
-            cb->collisionGroupDescs);
+        copyDescs(primPaths, cb->collisionGroupPrimPaths, objectDescs,
+                  cb->collisionGroupDescs);
     }
     break;
     case UsdPhysicsObjectType::Undefined:
@@ -403,7 +414,7 @@ dict _LoadUsdPhysicsFromRange(UsdStageWeakPtr stage,
 
     gMarshalCallback.clear();
     const bool ret_val = LoadUsdPhysicsFromRange(stage, includePaths,
-        ReportPhysicsObjectsFn, &gMarshalCallback,
+        ReportPhysicsObjectsFn, VtValue(&gMarshalCallback),
         !excludePaths.empty() ? &excludePaths : nullptr,
         customTokensValid ? &parsingCustomTokens : nullptr,
         !simulationOwners.empty() ? &simulationOwners : nullptr);

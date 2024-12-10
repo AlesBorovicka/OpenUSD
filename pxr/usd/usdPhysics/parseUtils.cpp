@@ -1527,15 +1527,16 @@ void CallReportFn(
     UsdPhysicsObjectType::Enum descType, 
     const std::vector<UsdPrim>& physicsPrims, 
     const std::vector<DescType>& physicsDesc, UsdPhysicsReportFn reportFn, 
-    SdfPathVector& primPathsVector, void* userData)
+    SdfPathVector& primPathsVector, const VtValue& userData)
 {
     primPathsVector.resize(physicsPrims.size());
     for (size_t i = 0; i < physicsPrims.size(); i++)
     {
         primPathsVector[i] = physicsPrims[i].GetPrimPath();
     }
-    reportFn(descType, primPathsVector.size(), primPathsVector.data(), 
-             physicsDesc.data(), userData);
+    reportFn(descType, TfMakeConstSpan(primPathsVector),
+             TfSpan<const UsdPhysicsObjectDesc>(
+                physicsDesc.data(), physicsDesc.size()), userData);
 }
 
 
@@ -2298,7 +2299,7 @@ void FinalizeArticulations(const UsdStageWeakPtr stage,
 bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
     const std::vector<SdfPath>& includePaths,
     UsdPhysicsReportFn reportFn,
-    void* userData,
+    const VtValue& userData,
     const std::vector<SdfPath>* excludePaths,
     const CustomUsdPhysicsTokens* customPhysicsTokens,
     const std::vector<SdfPath>* simulationOwners)

@@ -29,15 +29,14 @@ PXR_NAMESPACE_OPEN_SCOPE
 /// UsdPhysicsReportFn - report function that reports parsed data
 ///
 /// \param[in] type     Object type
-/// \param[in] numDesc  Number of descriptors to be processed
-/// \param[in] primPaths    Array of prim paths that were parsed
-/// \param[in] objectDescs  Corresponding array of object descriptors of the 
+/// \param[in] primPaths    Span of prim paths that were parsed
+/// \param[in] objectDescs  Corresponding span of object descriptors of the 
 /// reported type
 /// \param[in] userData User data provided to the parsing function
 using UsdPhysicsReportFn =
-std::function<void(UsdPhysicsObjectType::Enum type, size_t numDesc,
-    const SdfPath* primPaths, const UsdPhysicsObjectDesc* objectDescs,
-    void* userData)>;
+std::function<void(UsdPhysicsObjectType::Enum type,
+    TfSpan<const SdfPath> primPaths, TfSpan<const UsdPhysicsObjectDesc> objectDescs,
+    const VtValue& userData)>;
 
 /// \struct CustomUsdPhysicsTokens
 ///
@@ -81,7 +80,7 @@ struct CustomUsdPhysicsTokens
 USDPHYSICS_API bool LoadUsdPhysicsFromRange(const UsdStageWeakPtr stage,
     const std::vector<SdfPath>& includePaths,
     UsdPhysicsReportFn reportFn,
-    void* userData,
+    const VtValue& userData,
     const std::vector<SdfPath>* excludePaths = nullptr,
     const CustomUsdPhysicsTokens* customPhysicsTokens = nullptr,
     const std::vector<SdfPath>* simulationOwners = nullptr);
