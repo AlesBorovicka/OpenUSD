@@ -153,5 +153,6 @@ class TestUsdValidationRegistryPy(unittest.TestCase):
         self.assertEqual(len(validators), 2)
         self.assertIn(validator, validators)
 
+
 if __name__ == "__main__":
     unittest.main()
