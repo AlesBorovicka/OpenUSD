@@ -61,6 +61,7 @@ PXR_NAMESPACE_OPEN_SCOPE
 HdPrmanLight::HdPrmanLight(SdfPath const& id, TfToken const& lightType)
     : HdLight(id)
     , _hdLightType(lightType)
+    , _visibleToCamera(true) // This is the RenderMan fallback for visibility:camera.
 {
     /* NOTHING */
 }
@@ -141,7 +142,7 @@ _PopulateNodesFromMaterialResource(HdSceneDelegate *sceneDelegate,
 
     result->reserve(matNetwork2.nodes.size());
     if (!HdPrman_ConvertHdMaterialNetwork2ToRmanNodes(
-            matNetwork2, nodePath, result)) {
+            id, matNetwork2, nodePath, result)) {
         TF_WARN("Failed to convert HdMaterialNetwork to Renderman shading "
                 "nodes for '%s'", id.GetText());
         return false;
@@ -694,8 +695,6 @@ HdPrmanLight::Sync(HdSceneDelegate *sceneDelegate,
             filterNodes.data()
         };
 
-        // TODO: portals
-        
         if (_shaderId == riley::LightShaderId::InvalidId()) {
             const riley::UserId userId(
                 stats::AddDataLocation(id.GetText()).GetValue());
@@ -943,13 +942,18 @@ HdPrmanLight::Sync(HdSceneDelegate *sceneDelegate,
             }
 
             // XXX: Temporary workaround for RMAN-20704
+            // If this light either is or was previously visible to camera:
             // Destroy the light instance so it will be recreated instead
             // of being updated, since ModifyLightInstance may crash.
-            if (_instanceId != riley::LightInstanceId::InvalidId()) {
+            int32_t visibleToCamera = true;
+            attrs.GetInteger(RixStr.k_visibility_camera, visibleToCamera);
+            if (_instanceId != riley::LightInstanceId::InvalidId() &&
+                (visibleToCamera || _visibleToCamera)) {
                 riley->DeleteLightInstance(
                     riley::GeometryPrototypeId::InvalidId(), _instanceId);
                 _instanceId = riley::LightInstanceId::InvalidId();
             }
+            _visibleToCamera = visibleToCamera;
             // XXX: End of RMAN-20704 workaround
 
             if (_instanceId == riley::LightInstanceId::InvalidId()) {

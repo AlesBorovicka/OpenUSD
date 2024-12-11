@@ -48,9 +48,6 @@ pxr_library(usdImagingGL
     PRIVATE_HEADERS
         unitTestGLDrawing.h
 
-    PYTHON_CPPFILES
-        moduleDeps.cpp
-
     PYMODULE_CPPFILES
         module.cpp
         wrapEngine.cpp
@@ -134,6 +131,14 @@ pxr_build_test(testUsdImagingGLResync
     CPPFILES
         unitTestGLDrawing.cpp
         testenv/testUsdImagingGLResync.cpp
+)
+
+pxr_build_test(testUsdImagingGLSublayerOperations
+    LIBRARIES
+        ${TEST_LIBS}
+    CPPFILES
+        unitTestGLDrawing.cpp
+        testenv/testUsdImagingGLSublayerOperations.cpp
 )
 
 pxr_build_test(testUsdImagingGLSurfaceShader
@@ -393,6 +398,11 @@ pxr_install_test_dir(
 pxr_install_test_dir(
     SRC testenv/testUsdImagingGLResync
     DEST testUsdImagingGLResync
+)
+
+pxr_install_test_dir(
+    SRC testenv/testUsdImagingGLSublayerOperations
+    DEST testUsdImagingGLSublayerOperations
 )
 
 pxr_install_test_dir(
@@ -706,7 +716,7 @@ pxr_register_test(testUsdImagingGLBasicDrawing_clipped
 )
 
 pxr_register_test(testUsdImagingGLBasicDrawing_id
-    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -idRender -stage basicDrawing/shaders.usd -frameAll -write testUsdImagingGLBasicDrawing_id.png"
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -rendererAov primId -stage basicDrawing/shaders.usd -frameAll -write testUsdImagingGLBasicDrawing_id.png"
     IMAGE_DIFF_COMPARE
         testUsdImagingGLBasicDrawing_id.png
     FAIL 1
@@ -2392,6 +2402,20 @@ pxr_register_test(testUsdImagingGLResync_instancer
     FAIL_PERCENT .03
     EXPECTED_RETURN_CODE 0
     TESTENV testUsdImagingGLResync
+)
+
+pxr_register_test(testUsdImagingGLSublayerOperations
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLSublayerOperations"
+    IMAGE_DIFF_COMPARE
+        initial.png
+        mute_attr.png
+        remove_sublayer_with_sub.png
+        unmute_attr.png
+        add_sublayer_with_sub.png
+    FAIL .05
+    FAIL_PERCENT .03
+    EXPECTED_RETURN_CODE 0
+    TESTENV testUsdImagingGLSublayerOperations
 )
 
 pxr_register_test(testUsdImagingGLPurpose
@@ -4597,6 +4621,30 @@ pxr_register_test(testUsdImagingGLAovVisualization_Storm_depth
         testUsdImagingGLAovVisualization_Storm_depth.png
     FAIL 0.05
     FAIL_PERCENT 0.001
+    WARN 0.025
+    WARN_PERCENT 0.002
+    EXPECTED_RETURN_CODE 0
+    TESTENV testUsdImagingGLAovVisualization
+)
+
+pxr_register_test(testUsdImagingGLAovVisualization_Storm_primId
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -stage viz_aov.usda -rendererAov primId -clear 0 0 0 1 -lighting -camera /main_cam -write testUsdImagingGLAovVisualization_Storm_primId.png"
+    IMAGE_DIFF_COMPARE
+        testUsdImagingGLAovVisualization_Storm_primId.png
+    FAIL 0.05
+    FAIL_PERCENT 0.02
+    WARN 0.025
+    WARN_PERCENT 0.002
+    EXPECTED_RETURN_CODE 0
+    TESTENV testUsdImagingGLAovVisualization
+)
+
+pxr_register_test(testUsdImagingGLAovVisualization_Storm_Neye
+    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdImagingGLBasicDrawing -offscreen -stage viz_aov.usda -rendererAov Neye -clear 0 0 0 1 -lighting -camera /main_cam -write testUsdImagingGLAovVisualization_Storm_Neye.png"
+    IMAGE_DIFF_COMPARE
+        testUsdImagingGLAovVisualization_Storm_Neye.png
+    FAIL 0.05
+    FAIL_PERCENT 0.02
     WARN 0.025
     WARN_PERCENT 0.002
     EXPECTED_RETURN_CODE 0

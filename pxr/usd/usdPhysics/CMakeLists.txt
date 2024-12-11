@@ -33,9 +33,6 @@ pxr_library(usdPhysics
     CPPFILES
         validators.cpp    
 
-    PYTHON_CPPFILES
-        moduleDeps.cpp
-
     PYMODULE_CPPFILES
         wrapMetrics.cpp
         wrapParseUtils.cpp

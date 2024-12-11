@@ -139,7 +139,8 @@ HdRenderIndex::IsSceneIndexEmulationEnabled()
 HdRenderIndex::HdRenderIndex(
     HdRenderDelegate *renderDelegate,
     HdDriverVector const& drivers,
-    const std::string &instanceName)
+    const std::string &instanceName,
+    const std::string &appName)
     : _emulationBatchingCtx(std::make_unique<_NoticeBatchingContext>(
         _noticeBatchingTokens->postEmulation))
     , _mergingBatchingCtx(std::make_unique<_NoticeBatchingContext>(
@@ -197,7 +198,8 @@ HdRenderIndex::HdRenderIndex(
             _terminalSceneIndex =
                 HdSceneIndexPluginRegistry::GetInstance()
                     .AppendSceneIndicesForRenderer(
-                        rendererDisplayName, _terminalSceneIndex, instanceName);
+                        rendererDisplayName, _terminalSceneIndex,
+                        instanceName, appName);
         }
 
         _siSd = std::make_unique<HdSceneIndexAdapterSceneDelegate>(
@@ -232,14 +234,15 @@ HdRenderIndex*
 HdRenderIndex::New(
     HdRenderDelegate *renderDelegate,
     HdDriverVector const& drivers,
-    const std::string &instanceName)
+    const std::string &instanceName,
+    const std::string &appName)
 {
     if (renderDelegate == nullptr) {
         TF_CODING_ERROR(
             "Null Render Delegate provided to create render index");
         return nullptr;
     }
-    return new HdRenderIndex(renderDelegate, drivers, instanceName);
+    return new HdRenderIndex(renderDelegate, drivers, instanceName, appName);
 }
 
 void
@@ -348,6 +351,7 @@ HdRenderIndex::_RemoveSubtree(
     _sprimIndex.RemoveSubtree(root, sceneDelegate, _tracker, _renderDelegate);
     _bprimIndex.RemoveSubtree(root, sceneDelegate, _tracker, _renderDelegate);
     _RemoveInstancerSubtree(root, sceneDelegate);
+    _RemoveTaskSubtree(root, sceneDelegate);
 }
 
 
@@ -587,6 +591,7 @@ HdRenderIndex::_Clear()
 
     // Clear instancers.
     _RemoveInstancerSubtree(SdfPath::AbsoluteRootPath(), nullptr);
+    _RemoveTaskSubtree(SdfPath::AbsoluteRootPath(), nullptr);
     _instancerMap.clear();
 }
 
@@ -606,9 +611,20 @@ HdRenderIndex::_TrackDelegateTask(HdSceneDelegate* delegate,
         return;
     }
 
-    HdTaskSharedPtr task = taskCreateFnc(delegate, taskId);
-    _tracker.TaskInserted(taskId, task->GetInitialDirtyBitsMask());
-    _taskMap.emplace(taskId, _TaskInfo{delegate, task});
+    HdTaskSharedPtr const task = taskCreateFnc(delegate, taskId);
+    _InsertTask(delegate, taskId, task);
+}
+
+void
+HdRenderIndex::_InsertTask(HdSceneDelegate* delegate,
+                           SdfPath const &id,
+                           HdTaskSharedPtr const &task)
+{
+    HD_TRACE_FUNCTION();
+    HF_MALLOC_TAG_FUNCTION();
+
+    _tracker.TaskInserted(id, task->GetInitialDirtyBitsMask());
+    _taskMap.emplace(id, _TaskInfo{delegate, task});
 }
 
 HdTaskSharedPtr const&
@@ -650,7 +666,7 @@ HdRenderIndex::_RemoveTaskSubtree(const SdfPath &root,
         const SdfPath &id = it->first;
         const _TaskInfo &taskInfo = it->second;
 
-        if ((taskInfo.sceneDelegate == sceneDelegate) &&
+        if ((sceneDelegate == nullptr || taskInfo.sceneDelegate == sceneDelegate ) &&
             (id.HasPrefix(root))) {
             _tracker.TaskRemoved(id);
 
