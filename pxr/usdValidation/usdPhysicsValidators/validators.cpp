@@ -10,11 +10,11 @@
 #include "pxr/base/tf/token.h"
 #include "pxr/usd/usd/prim.h"
 #include "pxr/usd/usd/schemaRegistry.h"
-#include "pxr/usd/usd/validationError.h"
-#include "pxr/usd/usd/validationRegistry.h"
-#include "pxr/usd/usd/validator.h"
-#include "pxr/usd/usdPhysics/tokens.h"
-#include "pxr/usd/usdPhysics/validatorTokens.h"
+#include "pxr/usd/usdGeom/tokens.h"
+#include "pxr/usdValidation/usdPhysicsValidators/validatorTokens.h"
+#include "pxr/usdValidation/usdValidation/error.h"
+#include "pxr/usdValidation/usdValidation/registry.h"
+#include "pxr/usdValidation/usdValidation/validator.h"
 
 #include "pxr/usd/usdGeom/xformable.h"
 #include "pxr/usd/usdGeom/gprim.h"
@@ -35,7 +35,6 @@
 #include <vector>
 
 PXR_NAMESPACE_OPEN_SCOPE
-
 
 template<typename T>
 inline bool ScaleIsUniform(T scaleX, T scaleY, T scaleZ, T eps = T(1.0e-5))

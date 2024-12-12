@@ -21,8 +21,7 @@ pxr_library(usdPhysics
 
     PUBLIC_CLASSES
         metrics
-        parseUtils
-        validatorTokens
+        parseUtils        
         
     PUBLIC_HEADERS
         api.h
@@ -30,9 +29,6 @@ pxr_library(usdPhysics
         parseUtils.h
         parseDesc.h   
         
-    CPPFILES
-        validators.cpp    
-
     PYMODULE_CPPFILES
         wrapMetrics.cpp
         wrapParseUtils.cpp
@@ -57,7 +53,6 @@ pxr_test_scripts(
     testenv/testUsdPhysicsRigidBodyAPI.py
     testenv/testUsdPhysicsCollisionGroupAPI.py
     testenv/testUsdPhysicsParsing.py
-    testenv/testUsdPhysicsValidation.py
 )
 
 pxr_register_test(testUsdPhysicsMetrics
@@ -81,11 +76,5 @@ pxr_register_test(testUsdPhysicsCollisionGroupAPI
 pxr_register_test(testUsdPhysicsParsing
     PYTHON
     COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdPhysicsParsing"
-    EXPECTED_RETURN_CODE 0
-)
-
-pxr_register_test(testUsdPhysicsValidation
-    PYTHON
-    COMMAND "${CMAKE_INSTALL_PREFIX}/tests/testUsdPhysicsValidation"
     EXPECTED_RETURN_CODE 0
 )

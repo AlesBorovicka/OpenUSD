@@ -5,7 +5,7 @@
 // https://openusd.org/license.
 //
 
-#include "pxr/usd/usdPhysics/validatorTokens.h"
+#include "pxr/usdValidation/usdPhysicsValidators/validatorTokens.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 

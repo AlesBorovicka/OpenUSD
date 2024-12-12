@@ -6,15 +6,15 @@
 # https://openusd.org/license.
 
 import sys, os, unittest
-from pxr import Tf, Usd, UsdPhysics, UsdGeom, Gf
+from pxr import Tf, Usd, UsdValidation, UsdPhysics, UsdGeom, Gf
 
 
 class TestUsdPhysicsValidation(unittest.TestCase):
 
     def test_rigid_body_xformable(self):        
-        validationRegistry = Usd.ValidationRegistry()
+        validationRegistry = UsdValidation.ValidationRegistry()
         validator = validationRegistry.GetOrLoadValidatorByName(
-            "usdPhysics:RigidBodyChecker"
+            "usdPhysicsValidators:RigidBodyChecker"
         )
 
         self.assertTrue(validator)
@@ -30,9 +30,9 @@ class TestUsdPhysicsValidation(unittest.TestCase):
         self.assertTrue(errors[0].GetName() == "RigidBodyNonXformable")
 
     def test_rigid_body_orientation_scale(self):        
-        validationRegistry = Usd.ValidationRegistry()
+        validationRegistry = UsdValidation.ValidationRegistry()
         validator = validationRegistry.GetOrLoadValidatorByName(
-            "usdPhysics:RigidBodyChecker"
+            "usdPhysicsValidators:RigidBodyChecker"
         )
 
         self.assertTrue(validator)
@@ -58,9 +58,9 @@ class TestUsdPhysicsValidation(unittest.TestCase):
         self.assertTrue(errors[0].GetName() == "RigidBodyOrientationScale")        
 
     def test_rigid_body_nesting(self):        
-        validationRegistry = Usd.ValidationRegistry()
+        validationRegistry = UsdValidation.ValidationRegistry()
         validator = validationRegistry.GetOrLoadValidatorByName(
-            "usdPhysics:RigidBodyChecker"
+            "usdPhysicsValidators:RigidBodyChecker"
         )
 
         self.assertTrue(validator)
@@ -82,9 +82,9 @@ class TestUsdPhysicsValidation(unittest.TestCase):
         self.assertTrue(errors[0].GetName() == "NestedRigidBody")
 
     def test_rigid_body_instancing(self):        
-        validationRegistry = Usd.ValidationRegistry()
+        validationRegistry = UsdValidation.ValidationRegistry()
         validator = validationRegistry.GetOrLoadValidatorByName(
-            "usdPhysics:RigidBodyChecker"
+            "usdPhysicsValidators:RigidBodyChecker"
         )
 
         self.assertTrue(validator)
@@ -111,9 +111,9 @@ class TestUsdPhysicsValidation(unittest.TestCase):
         self.assertTrue(errors[0].GetName() == "RigidBodyNonInstanceable")
 
     def test_articulation_nesting(self):        
-        validationRegistry = Usd.ValidationRegistry()
+        validationRegistry = UsdValidation.ValidationRegistry()
         validator = validationRegistry.GetOrLoadValidatorByName(
-            "usdPhysics:ArticulationChecker"
+            "usdPhysicsValidators:ArticulationChecker"
         )
 
         self.assertTrue(validator)
@@ -135,9 +135,9 @@ class TestUsdPhysicsValidation(unittest.TestCase):
         self.assertTrue(errors[0].GetName() == "NestedArticulation")        
 
     def test_articulation_body(self):        
-        validationRegistry = Usd.ValidationRegistry()
+        validationRegistry = UsdValidation.ValidationRegistry()
         validator = validationRegistry.GetOrLoadValidatorByName(
-            "usdPhysics:ArticulationChecker"
+            "usdPhysicsValidators:ArticulationChecker"
         )
 
         self.assertTrue(validator)
@@ -167,9 +167,9 @@ class TestUsdPhysicsValidation(unittest.TestCase):
         self.assertTrue(errors[0].GetName() == "ArticulationOnKinematicBody")        
 
     def test_physics_joint_invalid_rel(self):
-        validationRegistry = Usd.ValidationRegistry()
+        validationRegistry = UsdValidation.ValidationRegistry()
         validator = validationRegistry.GetOrLoadValidatorByName(
-            "usdPhysics:PhysicsJointChecker"
+            "usdPhysicsValidators:PhysicsJointChecker"
         )
 
         self.assertTrue(validator)
@@ -186,9 +186,9 @@ class TestUsdPhysicsValidation(unittest.TestCase):
         self.assertTrue(errors[0].GetName() == "JointInvalidPrimRel")        
 
     def test_physics_joint_multiple_rels(self):
-        validationRegistry = Usd.ValidationRegistry()
+        validationRegistry = UsdValidation.ValidationRegistry()
         validator = validationRegistry.GetOrLoadValidatorByName(
-            "usdPhysics:PhysicsJointChecker"
+            "usdPhysicsValidators:PhysicsJointChecker"
         )
 
         self.assertTrue(validator)
@@ -213,9 +213,9 @@ class TestUsdPhysicsValidation(unittest.TestCase):
         self.assertTrue(errors[0].GetName() == "JointMultiplePrimsRel")
 
     def test_collider_non_uniform_scale(self):
-        validationRegistry = Usd.ValidationRegistry()
+        validationRegistry = UsdValidation.ValidationRegistry()
         validator = validationRegistry.GetOrLoadValidatorByName(
-            "usdPhysics:ColliderChecker"
+            "usdPhysicsValidators:ColliderChecker"
         )
 
         self.assertTrue(validator)
@@ -242,9 +242,9 @@ class TestUsdPhysicsValidation(unittest.TestCase):
 
 
     def test_points_collider(self):
-        validationRegistry = Usd.ValidationRegistry()
+        validationRegistry = UsdValidation.ValidationRegistry()
         validator = validationRegistry.GetOrLoadValidatorByName(
-            "usdPhysics:ColliderChecker"
+            "usdPhysicsValidators:ColliderChecker"
         )
 
         self.assertTrue(validator)
